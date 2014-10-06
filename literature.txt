@@ -1,0 +1,14 @@
+[1] Randall J. LeVeque, "Finite Volume Methods for Hyperbolic Systems"
+[2] Benedict D. Rogers, Alistair G.L. Borthwik, Paul H. Taylor, "Mathematical balancing of flux gradient and source terms prior to using Roe's approximate Riemann solver"
+
+Referenced by [2]:
+
+L. Gascón, J.M. Coberán, "Construction of second-order TVD schemes for non-homogeneous hyperbolic conservation laws"
+D. Ambrosi, "Approximation of shallow water equations by Roe's approximate Riemann solver"
+P.L. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes"
+P.L. Roe, "Efficient construction and utilisation of approximate Riemann solutions"
+R.J. LeVeque, "Balancing source terms and flux gradients in high-resolution Godunov methods: the quasisteady wave-propagation algorithm"
+
+Referencing [2]:
+
+http://scholar.google.co.uk/scholar?cites=14608772116082871781&as_sdt=2005&sciodt=0,5&hl=en
