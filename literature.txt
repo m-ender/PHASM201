@@ -1,14 +1,26 @@
 [1] Randall J. LeVeque, "Finite Volume Methods for Hyperbolic Systems"
-[2] Benedict D. Rogers, Alistair G.L. Borthwik, Paul H. Taylor, "Mathematical balancing of flux gradient and source terms prior to using Roe's approximate Riemann solver"
+[2] Ben Rogers, Masayuki Fujihara, Alistair G. L. Borthwick, "Adaptive Q-tree Godunov-type scheme for shallow water equations"
+[3] Benedict D. Rogers, Alistair G.L. Borthwik, Paul H. Taylor, "Mathematical balancing of flux gradient and source terms prior to using Roe's approximate Riemann solver"
 
 Referenced by [2]:
+Ambrosi D., "Approximation of shallow water equations by Roe's (approximate?) Riemann solver"
+Nugic M., "Efficient implementation of non-oscillatory schemes for the computation of free-surface flows.""
+Falconer RA., "An introduction to nearly-horizontal flows." http://books.google.co.uk/books?id=vmlqje7hr_4C&pg=PA27&lpg=PA27&dq=Falconer+RA.+An+introduction+to+nearly-horizontal+flows.&source=bl&ots=ydiQ3UqNEO&sig=LSPFso0Cj1qXzbmoO9RD_lMSLUs&hl=en&sa=X&ei=6vAyVLaIEszxaqGvgbgH&ved=0CCMQ6AEwAA#v=onepage&q&f=false
+Alcrudo F, Garcia-Navarro P., "A high-resolution Godunov-type scheme in finite volumes for the 2D shallow-water
+equations."
+Zhao DH, Shen HW, Lai JS, Tabios III GQ., "Approximate Riemann solvers in FVM for 2D hydraulic shock wave
+modeling."
+
+Referenced by [3]:
 
 L. Gascón, J.M. Coberán, "Construction of second-order TVD schemes for non-homogeneous hyperbolic conservation laws"
 D. Ambrosi, "Approximation of shallow water equations by Roe's approximate Riemann solver"
 P.L. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes"
 P.L. Roe, "Efficient construction and utilisation of approximate Riemann solutions"
 R.J. LeVeque, "Balancing source terms and flux gradients in high-resolution Godunov methods: the quasisteady wave-propagation algorithm"
+Zhao DH, Shen HW, Lai JS, Tabios III GQ., "Approximate Riemann solvers in FVM for 2D hydraulic shock wave
+modeling." http://ascelibrary.org/doi/pdf/10.1061/%28ASCE%290733-9429%281996%29122%3A12%28692%29
 
-Referencing [2]:
+Referencing [3]:
 
 http://scholar.google.co.uk/scholar?cites=14608772116082871781&as_sdt=2005&sciodt=0,5&hl=en
