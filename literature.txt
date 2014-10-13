@@ -32,6 +32,9 @@ A. Harten, "High resolution schemes for hyperbolic conservation laws"
 Referenced by [5]:
 E. Toro, "Shock-Capturing Methods for Free-Surface Shallow Flows"
 
+Derivation of SWEs:
+http://scitation.aip.org/content/aip/journal/pof2/17/10/10.1063/1.2116747
+
 ---
 
 GPU related:

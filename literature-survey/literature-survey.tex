@@ -1,0 +1,157 @@
+\documentclass[a4paper,onecolumn,11pt]{article}
+
+% Use for onecolumn layout
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+
+\usepackage{graphicx}
+
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+
+\usepackage{natbib}
+\usepackage{textcomp}
+\usepackage[greek,english]{babel}
+\usepackage{amsmath}
+
+\frenchspacing
+\renewcommand{\thefootnote}{\alph{footnote}}
+
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
+% Different command for lower-case greek letters as they need a different command for bold letters.
+\newcommand{\gvec}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\guvec}[1]{\ensuremath{\gvec{\hat{#1}}}}
+\newcommand{\dif}{\mathrm{d}}
+
+\begingroup
+\lccode`\~=`\ %
+\lowercase{%
+  \gdef\assignment{\setcounter{word}{0}%
+    \catcode`~=\active
+    \def~{\space\stepcounter{word}}}}%
+\endgroup
+\newcounter{word}
+\def\endassignment{\stepcounter{word}%
+  \begin{flushright}%
+  (\arabic{word} words)%
+  \end{flushright}%
+}
+
+\title{Literature Survey \& Project Outline\\\small Accurate methods for computing rotation-dominated flows}
+
+\author{Martin Büttner, University College London}
+\date{17 October 2014}
+
+\begin{document}
+
+\maketitle
+
+\begin{assignment}
+
+\section*{Literature Survey}
+
+\begin{itemize}
+    \item general words
+\end{itemize}
+
+A lot of effort has been put into studying and solving hyperbolic systems of conservation laws. Several textbooks about the numerical methods considered in this project exist, including \citet{leveque1992numerical}, \citet{toro1999riemann} and \citet{leveque2002finite}, as well as \citet{toro2001shock} which focuses on the SWEs in particular.
+
+Conservation laws are systems of partial differential equations (PDEs) which, in two dimensions, can be written in the form:
+
+\begin{equation}
+    \vec{q}_t + \vec{f}(\vec{q})_x + \vec{g}(\vec{q})_y = \vec{s}(\vec{q}).
+    \label{claw}
+\end{equation}
+
+Here, $\vec{q}$ is a vector of density functions of conserved quantities, $\vec{f}$ and $\vec{g}$ are \emph{flux terms}, while $\vec{s}$ stands for a number of \emph{source terms}. Subscripts denote partial differentiation. For the components $q_i$ to be conserved means that the integral $\int_{-\infty}^\infty\int_{-\infty}^\infty (q_i - s_i)\,\dif x\,\dif y$ is independent of time. The flux terms describe how the quantities $\vec{q}$ are transported through the domain. Apart from actual sources or sinks the source terms $\vec{s}$ may be used to model a variety of physical and geometric effects.
+
+Such a system is called \emph{hyperbolic} if any linear combination of the Jacobian matrices $\partial\vec{f}/\partial\vec{q}$ and $\partial\vec{g}/\partial\vec{q}$ has real eigenvalues.
+
+The two-dimensional SWEs are a system of three partial differential equations in three conserved quantities: the water depth, $h$, and the two Cartesian components of the momentum, $hu$ and $hv$ (where *u* and *v* are the components of the velocity). The PDEs can be written as:
+
+\begin{eqnarray*}
+                        h_t + (hu)_x + (hv)_y & = & 0 \\
+    hu + (hu^2 + \frac{1}{2}gh^2)_x + (huv)_y & = & - ghB_x + fhv \\
+    hv + (huv)_x + (hv^2 + \frac{1}{2}gh^2)_y & = & - ghB_y - fhu, \\
+\end{eqnarray*}
+
+where $g$ is acceleration due to gravity, $B$ the bathymetry (bed elevation) and $f$ is the Coriolis coefficient. These can be obtained from the Navier-Stokes equations by assuming that the depth of the water is small compared to some significant horizontal length-scale and by depth-averaging the flow variables. For a full derivation see \citet{dellar2005shallow}. Associating this with Eq.~\ref{claw}, we see that
+
+$$
+    \vec{q} = \left( \begin{array}{c}
+        h \\
+        hu \\
+        hv
+    \end{array} \right),\;
+    \vec{f} = \left( \begin{array}{c}
+        hu \\
+        hu^2 + \frac{1}{2}gh^2 \\
+        huv
+    \end{array} \right),\;
+    \vec{g} = \left( \begin{array}{c}
+        hv \\
+        huv \\
+        hv^2 + \frac{1}{2}gh^2
+    \end{array} \right),\;
+    \vec{s} = \left( \begin{array}{c}
+        0 \\
+        - ghB_x + fhv \\
+        - ghB_y - fhu
+    \end{array} \right),
+$$
+
+which can indeed be shown to be hyperbolic (e.g. \citet{toro2001shock}, Section 3.5).
+
+For the purpose of this project only the above bathymetry and Coriolis source terms will be considered, but more advanced treatment of shallow water systems might include further terms to model other physical effects. Examples include bed friction, surface tension and eddy viscosity. If the SWEs are discretised on an irregular grid, geometric source terms might also be used which represent properties of the grid cells.
+
+Such hyperbolic systems can be solved using \emph{finite volume methods} in which the domain is divided up into a (not necessarily regular) grid of control volumes, and the conserved quantities are discretised by assuming that they are constant in each such volume. Note that in the case of the shallow water equations, ``volume'' can be interpreted as an area, as the quantities of interest are depth-averaged. The most popular such method is due to \citet{godunov1959difference} and is simply known as Godunov's method. It has been thoroughly studied for homogeneous hyperbolic conservation claws, where $\vec{s} = 0$, and is based on the integral form such systems:
+
+$$
+    \frac{\partial}{\partial t} \iint \vec{q}\,\dif S = - \oint \vec{n} \cdot \vec{h}\,\dif \ell,
+$$
+
+where the left-hand integral is over each cell area, the right-hand integral around its boundary and $\vec{h} = (\vec{f}, \vec{g})$. As opposed to the differential form, this integral form admits discontinuities, like hydraulic jumps.
+
+Traditionally, hyperbolic systems with source terms were solved by splitting the system into two parts. The homogeneous hyperbolic PDE:
+
+$$
+    \vec{q}_t + \vec{f}(\vec{q})_x + \vec{g}(\vec{q})_y = 0.
+$$
+
+And an ODE for the source terms:
+
+$$
+    \vec{q}_t = \vec{s}(\vec{q}).
+$$
+
+This way, the PDE can be solved with well-studied methods for hyperbolic systems, and the source terms can be solved independently be a simple integration in time, also using established methods like Runge-Kutta.
+
+This leads to problems in steady or quasi-steady scenarios, where $\vec{q}_t = 0$, such that the flux terms and source terms are balanced exactly. Since these can in principle be very large, even for balanced systems, this would require a time step in the hyperbolic system to be cancelled exactly by the corresponding time step in the source ODE. Due to different methods being employed and numerical inaccuracies, this is practically impossible, such that equilibria cannot be modelled. Furthermore, small (but important) perturbations away from equilibrium would be completely dominated by said numerical errors.
+
+Therefore, a lot of research was conducted over the past two decades to develop so-called \emph{well-balanced} methods which are able to preserve these equilibria exactly.
+
+\begin{itemize}
+    \item write about Godunov method, Riemann solvers
+    \item start from Toro's review, reiterate relevant parts
+    \item add other approaches that Toro didn't mention or which are newer
+\end{itemize}
+
+\section*{Project Outline}
+
+In the course of this project, the existing approaches for well-balanced Godunov-type solvers
+
+\begin{itemize}
+    \item evaluate existing approaches
+    \item implement promising ones in CLAWPACK
+    \item evaluate on relevant benchmark setups (which? breathers... basin?)
+    \item improvements?
+    \item implement on GPU?
+\end{itemize}
+
+\end{assignment}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{plainnat}
+\bibliography{literature-survey}
+
+\end{document}
