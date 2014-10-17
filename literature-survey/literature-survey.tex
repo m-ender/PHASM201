@@ -14,7 +14,7 @@
 \usepackage{amsmath}
 
 \frenchspacing
-\renewcommand{\thefootnote}{\alph{footnote}}
+%\renewcommand{\thefootnote}{\alph{footnote}}
 
 \renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
 \newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
@@ -46,15 +46,11 @@
 
 \maketitle
 
-\begin{assignment}
+The shallow water equations (SWEs) are a simplified but very effective model for incompressible fluid flow in which the fluid depth is very small compared to the horizontal length scale of the domain. Among other applications, this model has been particularly successful in modelling large-scale geophysical flows of atmospheric and oceanic currents. For these applications, models will usually include source terms to represent the Coriolis force, due to the Earth's rotation, and non-uniform bathymetry or topography. Computational difficulties arise in steady flow when these very large forces balance pressure gradients exactly. This is referred to as a geostrophic balance, and large-scale real-world currents are close to this balance at all times. Therefore, the interest of this project lies in numerical methods which work around these computational problems and remain stable for geostrophic flows.
 
 \section*{Literature Survey}
 
-\begin{itemize}
-    \item general words
-\end{itemize}
-
-A lot of effort has been put into studying and solving hyperbolic systems of conservation laws. Several textbooks about the numerical methods considered in this project exist, including \citet{leveque1992numerical}, \citet{toro1999riemann} and \citet{leveque2002finite}, as well as \citet{toro2001shock} which focuses on the SWEs in particular.
+A lot of effort has been put into studying and solving hyperbolic systems of conservation laws. Several textbooks about the numerical methods considered in this project exist, including \citet{leveque1992numerical}, \citet{toro1999riemann} and \citet{leveque2002finite}, as well as \citet{toro2001shock} which focuses on the SWEs in particular. In addition, there is a textbook on the rotating SWEs by \citet{zeitlin2007nonlinear}, Chapter 4 of which focuses on numerical methods.
 
 Conservation laws are systems of partial differential equations (PDEs) which, in two dimensions, can be written in the form:
 
@@ -67,7 +63,7 @@ Here, $\vec{q}$ is a vector of density functions of conserved quantities, $\vec{
 
 Such a system is called \emph{hyperbolic} if any linear combination of the Jacobian matrices $\partial\vec{f}/\partial\vec{q}$ and $\partial\vec{g}/\partial\vec{q}$ has real eigenvalues.
 
-The two-dimensional SWEs are a system of three partial differential equations in three conserved quantities: the water depth, $h$, and the two Cartesian components of the momentum, $hu$ and $hv$ (where *u* and *v* are the components of the velocity). The PDEs can be written as:
+The two-dimensional SWEs are a system of three partial differential equations in three conserved quantities: the water depth, $h$, and the two Cartesian components of the momentum, $hu$ and $hv$ (where $u$ and $v$ are the components of the velocity). The PDEs can be written as:
 
 \begin{eqnarray*}
                         h_t + (hu)_x + (hv)_y & = & 0 \\
@@ -75,7 +71,7 @@ The two-dimensional SWEs are a system of three partial differential equations in
     hv + (huv)_x + (hv^2 + \frac{1}{2}gh^2)_y & = & - ghB_y - fhu, \\
 \end{eqnarray*}
 
-where $g$ is acceleration due to gravity, $B$ the bathymetry (bed elevation) and $f$ is the Coriolis coefficient. These can be obtained from the Navier-Stokes equations by assuming that the depth of the water is small compared to some significant horizontal length-scale and by depth-averaging the flow variables. For a full derivation see \citet{dellar2005shallow}. Associating this with Eq.~\ref{claw}, we see that
+where $g$ is acceleration due to gravity, $B$ the bathymetry (bed elevation) and $f$ is the Coriolis coefficient. These can be obtained from the Navier--Stokes equations by assuming that the depth of the water is small compared to some significant horizontal length-scale and by depth-averaging the flow variables. For a full derivation see \citet{dellar2005shallow}. Associating this with Eq.~\ref{claw}, the SWEs can be written in vector form using
 
 $$
     \vec{q} = \left( \begin{array}{c}
@@ -104,51 +100,92 @@ which can indeed be shown to be hyperbolic (e.g. \citet{toro2001shock}, Section 
 
 For the purpose of this project only the above bathymetry and Coriolis source terms will be considered, but more advanced treatment of shallow water systems might include further terms to model other physical effects. Examples include bed friction, surface tension and eddy viscosity. If the SWEs are discretised on an irregular grid, geometric source terms might also be used which represent properties of the grid cells.
 
-Such hyperbolic systems can be solved using \emph{finite volume methods} in which the domain is divided up into a (not necessarily regular) grid of control volumes, and the conserved quantities are discretised by assuming that they are constant in each such volume. Note that in the case of the shallow water equations, ``volume'' can be interpreted as an area, as the quantities of interest are depth-averaged. The most popular such method is due to \citet{godunov1959difference} and is simply known as Godunov's method. It has been thoroughly studied for homogeneous hyperbolic conservation claws, where $\vec{s} = 0$, and is based on the integral form such systems:
+Such hyperbolic systems can be solved using \emph{finite volume methods} in which the domain is divided up into a (not necessarily regular) grid of control volumes, and the conserved quantities are discretised by assuming that they are constant across each such volume. Note that ``volume'' is being used in a generalised sense here --- for a two-dimensional system like the SWEs, the grid cells are actually areas. The most popular such method is due to \citet{godunov1959difference}\footnote{The author could not obtain an English translation of this Russian paper, but the method developed by Godunov has been extensively reiterated in papers and textbooks. Therefore, the following explanation of the method is based on what the author was able to find in those secondary sources.} and is simply known as Godunov's method --- in fact, today a whole family of Godunov methods has been developed based on the concepts derived in this paper. It has been thoroughly studied for homogeneous hyperbolic conservation laws, where $\vec{s} = 0$, and is based on the integral form of such systems. In the one dimensional case, this integral form is
+
+$$
+    \frac{\dif}{\dif t} \int_{x_1}^{x_2} \vec{q}(x)\,\dif x = \vec{f}(\vec{q}(x_1)) - \vec{f}(\vec{q}(x_2)),
+$$
+
+where $x_1$ and $x_2$ are the boundaries of a control volume. As opposed to the differential form, this integral form admits discontinuities, like hydraulic jumps.
+
+Due to the piecewise-constant discretisation, every cell boundary $x_i$ is now a simple step-function. Such an initial-value problem for conservation laws is known as a Riemann problem (see \citet{toro1999riemann}, Section 2.2.2, \citet{leveque2002finite}, Section 3.8, or \citet{toro2007godunov}, Section 2.1). By solving each of these Riemann problems, the discretised SWEs can be solved. The other insight of Godunov's method is that each hyperbolic system has a number of characteristic waves which only propagate in certain directions, which allows to simplify the computation by only looking at waves that can propagate \emph{into} each cell. This technique is known as \emph{upwinding}.
+
+While it is possible to solve the Riemann problem exactly for many systems (including the SWEs), this dominates the computations necessary to solve each time step. Therefore, approximate solvers have been developed, the most popular one being due to \citet{roe1981approximate}. See the textbooks mentioned above for an overview of exact and approximate Riemann solvers.
+
+Note that special care has to be taken with dry states in systems where negative values for one or more conserved quantities are unphysical. The SWEs are an example of such a system, as the water depth, $h$, is strictly non-negative. In fact, the SWEs do not even hold for regions where the depth is zero. Therefore, wet/dry fronts have to be dealt with differently than other cell boundaries. Modelling these is particularly important in geophysical flows, where they appear on beaches of protruding topography, or during outcropping of stratified flow. See \citet{toro2001shock}, Chapter 6, for exact Riemann solvers in the presence of dry states.
+
+There are several ways to apply Godunov's method in two dimensions. In general, a numerical scheme can be developed from the equivalent two-dimensional integral form:
 
 $$
     \frac{\partial}{\partial t} \iint \vec{q}\,\dif S = - \oint \vec{n} \cdot \vec{h}\,\dif \ell,
 $$
 
-where the left-hand integral is over each cell area, the right-hand integral around its boundary and $\vec{h} = (\vec{f}, \vec{g})$. As opposed to the differential form, this integral form admits discontinuities, like hydraulic jumps.
+where the left-hand integral is over each cell area, the right-hand integral around its boundary and $\vec{h} = (\vec{f}, \vec{g})$.
 
-Traditionally, hyperbolic systems with source terms were solved by splitting the system into two parts. The homogeneous hyperbolic PDE:
+This usually yields the best results but is also computationally more intensive. A simpler approach is to apply a dimensional split, and alternate between solving one-dimensional Riemann problems along slices in the $x$ and $y$ directions, respectively (\citet{toro2001shock}, Section 12.3.1, \citet{leveque2002finite}, Section 19.5). For unsplit two-dimensional solvers, see \citet{toro1999riemann}, Chapter 16, \citet{toro2001shock}, Section 12.3.2 and \citet{leveque2002finite}, chapters 19--21.
+
+A fairly recent review of Godunov-type methods was conducted by \citet{toro2007godunov} and an older review can be found in \citet{sweby2001godunov}.
+
+The previous discussion assumed homogeneous systems. However, the interest of this project does not lie in homogeneous systems, but in conservation laws with source terms. Similar to how a dimensional splitting can be applied, traditionally, hyperbolic systems with source terms were solved by splitting the system into two parts. The homogeneous hyperbolic PDEs:
 
 $$
     \vec{q}_t + \vec{f}(\vec{q})_x + \vec{g}(\vec{q})_y = 0.
 $$
 
-And an ODE for the source terms:
+And a set of ordinary different equations (ODEs) for the source terms:
 
 $$
     \vec{q}_t = \vec{s}(\vec{q}).
 $$
 
-This way, the PDE can be solved with well-studied methods for hyperbolic systems, and the source terms can be solved independently be a simple integration in time, also using established methods like Runge-Kutta.
+This way, the homogeneous system can be solved using well-studied Godunov-type methods, and the source terms can be solved independently be a simple integration in time, also using established methods like Runge-Kutta (originally developed by \citet{runge1895numerische} and \citet{kutta1901beitrag}; see \citet{kaw2009numerical}, Sections 8.3 and 8.4 for a modern account). See \citet{toro2001shock}, Section 12.2.2 or \citet{leveque2002finite}, Sections 17.2.2 to 17.5, for instance.
 
-This leads to problems in steady or quasi-steady scenarios, where $\vec{q}_t = 0$, such that the flux terms and source terms are balanced exactly. Since these can in principle be very large, even for balanced systems, this would require a time step in the hyperbolic system to be cancelled exactly by the corresponding time step in the source ODE. Due to different methods being employed and numerical inaccuracies, this is practically impossible, such that equilibria cannot be modelled. Furthermore, small (but important) perturbations away from equilibrium would be completely dominated by said numerical errors.
+However, this leads to problems in steady or quasi-steady scenarios, where $\vec{q}_t \approx 0$, such that the flux terms and source terms are balanced at all times. According to \citet{toro2007godunov}, the first authors to recognise this were \citet{glimm1984generalized}. To preserve the balance, this would require a time step in the hyperbolic system to be cancelled exactly by the corresponding time step in the source ODE. Since these terms can in principle be very large, even for balanced systems, due to different methods being employed and numerical inaccuracies, this is practically impossible, such that equilibria cannot be modelled. Furthermore, small perturbations away from equilibrium would be completely dominated by said numerical errors. These problems are particularly relevant for large-scale geophysical flows, which are usually very close to geostrophic balance --- which is an instance of balanced flux and source terms --- at all times.
 
-Therefore, a lot of research was conducted over the past two decades to develop so-called \emph{well-balanced} methods which are able to preserve these equilibria exactly.
+Therefore, a lot of research was conducted over the past two decades to develop so-called \emph{well-balanced} methods which are able to preserve these equilibria exactly. To the best of the author's knowledge, \citet{greenberg1996well} were the first to use the term ``well-balanced''.
 
-\begin{itemize}
-    \item write about Godunov method, Riemann solvers
-    \item start from Toro's review, reiterate relevant parts
-    \item add other approaches that Toro didn't mention or which are newer
-\end{itemize}
+Subsequently, dozens of well-balanced methods have been developed, including \citet{leveque1998balancing}, \citet{garcia2000numerical}, \citet{hubbard2000flux}, \citet{burguete2001efficient}, \citet{gascon2001construction}, \citet{rogers2001adaptive}, \citet{bale2003wave}, \citet{rogers2003mathematical}, \citet{audusse2004fast}, \citet{chinnayya2004well}, \citet{liang2009adaptive}, \citet{liang2009numerical}. The most recent articles the author could find are by \citet{zhang2014well} and \citet{chertockwell}, the latter being of particular relevance here, as their assumptions align with those made in this project. Furthermore, Section 4.4 of \citet{zeitlin2007nonlinear} presents a long list of other well-balanced methods applicable to the rotating SWEs and refers to the method discussed in \citet{audusse2004fast} and related works as ``the most classical [well-balanced] method''. With \citet{bouchut2004nonlinear}, there is also a textbook focusing primarily on these methods.
+
+Due to the vast amount of publications in this area, an in-depth review of these methods is beyond the scope of this preliminary literature survey. In fact, such a review will account for a large part of the overall project. At this stage, it should only be noted that a variety approaches exist, some of which employ a change of variables that allow standard Godunov methods to be applied and others which derive completely new (unsplit) methods based on the full inhomogeneous integral form of the equations.
+
+Finally, an additional technique should be mentioned, which can be applied independently of the chosen Riemann solver: \emph{Adaptive mesh refinement} (AMR) refers to using grids of different resolutions for different patches of the domain, and changing the resolution of each patch during solving based on the current state of the solution. The motivation behind this is to improve both the quality of the solution and the runtime and memory performance of the solver. Some features of the domain, like irregular boundaries, or propagating shocks, can benefit immensely from an increased resolution to mitigate aliasing effects of the discretisation. However, using the necessary high resolution across the entire domain can result in infeasible computation times. Therefore, using patches of different resolution, we can compute the critical parts of the domain as exactly as necessary while still using a low resolution on uniform regions to greatly reduce the computational effort.
+
+Several AMR techniques have been developed, including quad-tree-based approaches, as discussed in \citet{rogers2001adaptive}, and so-called Berger--Oliger--Colella adaptive refinement, as introduced in \citet{berger1984adaptive} and \citet{berger1989local} and further extended in \citet{BergerLeVeque98}. Since a detailed analysis of these methods is beyond the scope of this project, the reader is referred to \citet{plewa2005adaptive} for a broad overview over the research done in this field.
+
+
+
 
 \section*{Project Outline}
 
-In the course of this project, the existing approaches for well-balanced Godunov-type solvers
+The previous survey shows that there are many orthogonal concerns to be taken into account when selecting a solver for the shallow water equations. These include:
 
 \begin{itemize}
-    \item evaluate existing approaches
-    \item implement promising ones in CLAWPACK
-    \item evaluate on relevant benchmark setups (which? breathers... basin?)
-    \item improvements?
-    \item implement on GPU?
+    \item What grid should be used for discretisation?
+    \item Should adaptive mesh refinement be applied?
+    \item Which source terms should be included in the model?
+    \item How are the source terms to be balanced, or is it even feasible to use source splitting?
+    \item Should wet/dry fronts be modelled?
+    \item Should multilayer flow be modelled?
+    \item Should a dimensional split be applied?
 \end{itemize}
 
-\end{assignment}
+As the focus of this project lies on balancing source terms for applications in large-scale geophysical flows, most of the technical decisions will be made in favour of simpler implementation to begin with. The only source terms that will be considered are the Coriolis forcing term and the bathymetry term. The grid will be assumed to be rectangular and regular. Adaptive mesh refinement will be used in order to deal with non-rectangular boundaries. For simplicity, dry states will be ignored, and the fluid will be assumed to consist only of a single layer. Unless it produces noticeably inferior results, dimensional splitting will be used, as unsplit approaches require multiple solvers to be written for each approach.
+
+On the basis of these decisions the project will be carried out as follows:
+
+Initially, existing well-balanced Godunov-type methods will be carefully reviewed with focus on their assumptions, difficulty of implementation and suitability for use with Coriolis and bathymetry source terms, in particular. About one month of time will be allocated for this in-depth review.
+
+Subsequently, based on these criteria, some of the methods will be selected and implemented in Fortran 90, using LeVeque's framework CLAWPACK\footnote{\url{http://www.clawpack.org/}}. In particular, the AMRClaw version will be used, which implements an adaptive mesh refinement algorithm detailed in \citet{BergerLeVeque98}. This will allow AMR to be used with all solvers without the need for any additional implementation effort. These implementations will then be tested against model problems with known steady solutions, such as a still fluid over varying bathymetry (under rotation) and a steadily rotating vortex of fluid over topography. This phase of the project is expected to take until the end of January.
+
+Depending on the results of these tests, the remaining time can be spent on one or more of the following three tasks:
+
+\begin{itemize}
+    \item Attempting to improve methods which performed badly on the model problems by using more advanced techniques in areas that were simplified initially (for instance, by replacing the dimensional split with an unsplit method).
+    \item Attempting to model additional physical effects with methods that performed well. Here, the focus would lie on including an additional source term to model bed friction, and dealing with dry states and multi-layer fluids, as these are of particular importance in large-scale geophysical flows.
+    \item Using well-working solvers to look for steady or quasi-steady solutions in additional problems which are known to exhibit such solutions in the non-rotating case. This includes long-range breathers and Prandtl--Meyer expansion fans.
+\end{itemize}
+
+Thus, at the end of the project will stand a comprehensive review and comparison of existing well-balanced solvers for the shallow water equations, potentially with novel results for steady solutions under strong rotation.
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
