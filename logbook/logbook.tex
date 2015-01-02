@@ -1,0 +1,105 @@
+\documentclass[a4paper,onecolumn,11pt]{report}
+
+% Use for onecolumn layout
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+
+\usepackage{graphicx}
+
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+
+\usepackage{natbib}
+\usepackage{textcomp}
+\usepackage[greek,english]{babel}
+\usepackage{amsmath}
+
+\frenchspacing
+%\renewcommand{\thefootnote}{\alph{footnote}}
+
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
+% Different command for lower-case greek letters as they need a different command for bold letters.
+\newcommand{\gvec}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\guvec}[1]{\ensuremath{\gvec{\hat{#1}}}}
+\newcommand{\dif}{\mathrm{d}}
+
+\begingroup
+\lccode`\~=`\ %
+\lowercase{%
+  \gdef\assignment{\setcounter{word}{0}%
+    \catcode`~=\active
+    \def~{\space\stepcounter{word}}}}%
+\endgroup
+\newcounter{word}
+\def\endassignment{\stepcounter{word}%
+  \begin{flushright}%
+  (\arabic{word} words)%
+  \end{flushright}%
+}
+
+\title{Accurate methods for computing rotation-dominated flows\\\small Logbook}
+
+\author{Martin Büttner, University College London}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\subsubsection*{27 October 2014}
+
+After finishing the literature survey and project outline, I set up the basic infrastructure for the project. All the data, code and written work will be maintained in a private \texttt{git}\footnote{\url{http://git-scm.com/}} repository at \url{https://github.com/mbuettner/PHASM201}. I've also set up individual \LaTeX projects for the literature survey, final report and this logbook.
+
+The coming month will be spent on reading papers about existing well-balanced methods in-depth to evaluate which ones are worth implementing during the second phase of the project.
+
+\subsubsection*{29 October 2014}
+
+Read \citet{leveque1998balancing} today. He balances the SWEs with source terms by introducing another Riemann problem in the centre of the cell, such that each cell doesn't just have an its average value $Q_i$ but two values $Q_i \pm \delta$, such that the overall cell averages is the same. The Riemann problems at the cell boundaries are then solved between these new values. The trick is that the step inside the cell is chosen such that the resulting flow cancels exactly with the source term - hence this Riemann problem does not even need to be solved. Works up to Courant number 1. Caveat of the paper: the ``exact'' reference solutions used to compare their method with a fractional step method also use their method, just on a much finer grid. The paper explicitly mentions that this method \emph{only} captures quasi-steady solutions and does not perform well for solutions away from equilibrium. In particular, it is not suited to setting up transcritical flow problems. The paper suggests using other (possibly split) methods to find an approximation to a (quasi-)steady solution and then switch methods.
+
+This method simplifies boundary conditions in the presence of source terms. The approach is also adapted to two dimensions in the paper.
+
+\subsubsection*{4 November 2014}
+
+I found another early paper, \citet{ambrosi1995approximation}, which observes the problems of unbalanced schemes, namely that still-lake equilibria are not preserved.
+
+\citet{rogers2001adaptive} use a different formulation of the SWEs to balance their solver. Instead of writing the SWEs in terms of $(h, uh, vh)$, they use $(\zeta, uh, vh)$, where $\zeta$ is the disturbance of the water depth from still water level. The advantage is that still-lake equilibria don't contribute any flux terms in this case (while they do in the conventional formulation, due to differing water depth). Note that this method is tailored specifically to source terms due to variable bathymetry. They follow this up in \citet{rogers2003mathematical}. This paper generalises the method to arbitrary source terms and equilibria, but the method does seem to require information about the desired equilibrium to be included in the formulation of the SWEs themselves (meaning that no one solver can be used for several equilibria or will be particularly well suited to systems away from equilibrium). Generally speaking, the core of the method is to rewrite the entire system in variables which are deviations from one particular equilibrium.
+
+\subsubsection*{7 November 2014}
+
+Reading \citet{chertockwell}. They focus on the particular case, we're interested in: well-balanced schemes for the SWEs with variable bathymetry and Coriolis force. They are referencing quite a lot of papers with the same focus, many of which I haven't encountered during the literature survey. It might be worth having a look into those, too. Notably, this paper doesn't use Riemann--problem based methods, but a so-called ``central upwind'' method and an ``evolution Galerkin'' method. I'll look into these, and figure out whether they can be implemented with Clawpack as well.
+
+The basis of their scheme is a piecewise \emph{linear} reconstruction, which might indicate that this is not suitable for Godunov-type methods. It might be possible to implement it with Clawpack anyway.
+
+The schemes use Courant numbers 0.5 and 0.6, but the paper makes no mention of what the actual CFL condition is. This might be detailed in the referenced papers.
+
+Another useful takeaway from the paper might be the numerical simulations used for verification, as their area of interest is the same as ours.
+
+\subsubsection*{19 November 2014}
+
+I've had a look at \citet{walters2009useful}. It seems to be dealing with completely different numerical schemes for the SWEs, like implicit and explicit Euler schemes. It does focus on the Coriolis force and seems to include bathymetry, but I think this might be beyond the scope of the project, as these are not FVMs.
+
+\citet{audusse2009conservative} does not present a well-balanced scheme but derives a different numerical scheme that ensures conservativity in rotating frames, by applying the change of variables into the rotating frame \emph{after} discretisation. However, they close their paper saying that they wanted to extend their work to a well-balanced scheme ``in the near future''. I believe that follow-up paper is \citet{audusse2011preservation}, which I still have to look into.
+
+\subsubsection*{22 November 2014}
+
+Looking through other recent papers, they all focus on well-balanced methods that support wet/dry fronts. Hence, I'll be ignoring those for now and look into somewhat older papers instead.
+
+\citet{garcia2000numerical} focuses primarily on geometrical source terms, which is also not particularly relevant to this project.
+
+\subsubsection*{24 November 2014}
+
+\citet{hubbard2000flux} present a general way to balance source terms, by including them in the numerical scheme used for the flux terms. They report that their method works for equilibria \emph{and} away from equilibria, but in the latter case slope limiters put a very strict bound on the Courant number (they used 0.1 in the paper). The paper itself seems very technical, so I'll get back to it after reading some more about the basics of the Roe solver.
+
+Hence, I decided to start a detailed reading of \citet{toro2001shock} for next few days.
+
+\subsubsection*{30 December 2014}
+
+I ended up re-reading \citet{leveque2002finite} instead, which did greatly improve my understanding of the methods in general (including the Roe solver). An important decision I made with Prof. Johnson in the meantime is to restrict the methods to the dimensionally-split SWEs (in one dimension) for now. Since we were going to use a dimensional split for the 2D equations anyway, adding the second dimension does not actually provide anything new for studying the methods. Solving the equations in only one dimension instead has the advantage of running much faster (which allows for higher resolutions to be used), and makes it much easier to find interesting equilibrium states to test the methods.
+
+I also found out that GeoClaw uses an f-wave based solver, which is well-balanced with respect to the bathymetry terms. It is not entirely clear whether it is also well-balanced with respect to the Coriolis terms. See \citet{berger2011geoclaw}. I might look into this, although the capabilities of the particular solver used by GeoClaw go well beyond the scope of this project (the solver is positivity-preserving and includes bed friction) -- it also has the major disadvantage of working with dimensional quantities, which makes it harder to compare to the non-dimensionalised solvers I intend to write myself.
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{plainnat}
+\bibliography{../common/bibliography}
+
+\end{document}
