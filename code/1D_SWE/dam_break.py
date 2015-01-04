@@ -9,22 +9,54 @@ Solve the x-split two-dimensional shallow water equations:
 
 .. math::
     h_t + (hu)_x & = 0 \\
-    (hu)_t + (hu^2 + \frac{1}{2}gh^2)_x & = 0 \\
-    (hv)_t + (huv)_x = 0.
+    (hu)_t + (hu^2 + \frac{1}{2}gh^2)_x & = fhv - gh B_x \\
+    (hv)_t + (huv)_x = -fhu.
 
 Here h is the depth, u is the x-velocity, v is the y-velocity
 and g is the gravitational constant.
 The default initial condition used here models a dam break.
 """
 
+f = 1.
+
 import numpy as np
 from clawpack import riemann
+
+def step_source(solver,state,dt):
+    """
+    Source term due to a rotating frame and variable bathymetry.
+    Integrated using a 2-stage, 2nd-order Runge-Kutta method.
+    This is a Clawpack-style source term routine, which approximates
+    the integral of the source terms over a step.
+    Note that q[0,:] = h is unaffected by the source term.
+    """
+    dt2 = dt/2.
+
+    q = state.q
+
+    h    = q[0,:]
+    hu   = q[1,:]
+    hv   = q[2,:]
+
+    qstar = np.empty(q.shape)
+
+    X = state.c_centers
+
+    qstar[1,:] = q[1,:] + dt2 * hv * f
+    qstar[2,:] = q[2,:] - dt2 * hu * f
+
+    hu   = qstar[1,:]
+    hv   = qstar[2,:]
+
+    q[1,:] = q[1,:] + dt * hv * f
+    q[2,:] = q[2,:] - dt * hu * f
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
     import shallow_roe_with_efix_split
 
     solver = pyclaw.ClawSolver1D(shallow_roe_with_efix_split)
+    solver.step_source = step_source
     solver.limiters = pyclaw.limiters.tvd.vanleer
     solver.num_waves = 3
     solver.num_eqn = 3
@@ -52,10 +84,10 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     hl = 3.
     ul = 0.
-    vl = 1.
+    vl = 0.
     hr = 1.
     ur = 0.
-    vr = -1.
+    vr = 0.
     state.q[0,:] = hl * (xc <= x0) + hr * (xc > x0)
     state.q[1,:] = hl*ul * (xc <= x0) + hr*ur * (xc > x0)
     state.q[2,:] = hl*vl * (xc <= x0) + hr*vr * (xc > x0)
