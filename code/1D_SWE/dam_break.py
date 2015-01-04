@@ -17,10 +17,43 @@ and g is the gravitational constant.
 The default initial condition used here models a dam break.
 """
 
-f = 1.
-
 import numpy as np
 from clawpack import riemann
+
+f = 1.
+# Initialise bathymetry
+# TODO: Turn this into a proper function and store it somewhere in the Clawpack state.
+B = np.zeros(500)
+Bx = np.zeros(500)
+
+def qinit(state,x_min,x_max):
+    xc = state.grid.x.centers
+
+    x0 = 0.
+
+    # Left state
+    hl = 1.
+    ul = 0.
+    vl = 0.
+
+    # Right state
+    hr = 3.
+    ur = 0.
+    vr = 0.
+    # Water depth
+    state.q[0,:] = (hl-hr) * (xc <= -2.0) + hr + (hl-hr) * (xc > 2.0)
+    state.q[0,:] -= B # Adjust for bathymetry
+    # x-momentum
+    state.q[1,:] = (hl*ul-hr*ur) * (xc <= -2.0) + hr*ur + (hl*ul-hr*ur) * (xc > 2.0)
+    # y-momentum
+    state.q[2,:] = (hl*vl-hr*vr) * (xc <= -2.0) + hr*vr + (hl*vl-hr*vr) * (xc > 2.0)
+
+def init_topo(state,x_min,x_max):
+    xc = state.grid.x.centers
+
+    global B, Bx
+    B = 0*xc #np.exp(-xc*xc)
+    Bx = np.gradient(B, 10./500)
 
 def step_source(solver,state,dt):
     """
@@ -38,17 +71,19 @@ def step_source(solver,state,dt):
     hu   = q[1,:]
     hv   = q[2,:]
 
+    g = state.problem_data['grav']
+
     qstar = np.empty(q.shape)
 
     X = state.c_centers
 
-    qstar[1,:] = q[1,:] + dt2 * hv * f
+    qstar[1,:] = q[1,:] + dt2 * hv * f - g * h * Bx
     qstar[2,:] = q[2,:] - dt2 * hu * f
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
-    q[1,:] = q[1,:] + dt * hv * f
+    q[1,:] = q[1,:] + dt * hv * f - g * h * Bx
     q[2,:] = q[2,:] - dt * hu * f
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
@@ -77,24 +112,12 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     # Gravitational constant
     state.problem_data['grav'] = 1.0
 
-    xc = state.grid.x.centers
-
-    # Initial condition
-    x0=0.
-
-    hl = 3.
-    ul = 0.
-    vl = 0.
-    hr = 1.
-    ur = 0.
-    vr = 0.
-    state.q[0,:] = hl * (xc <= x0) + hr * (xc > x0)
-    state.q[1,:] = hl*ul * (xc <= x0) + hr*ur * (xc > x0)
-    state.q[2,:] = hl*vl * (xc <= x0) + hr*vr * (xc > x0)
+    init_topo(state, xlower, xupper)
+    qinit(state, xlower, xupper)
 
     claw = pyclaw.Controller()
     claw.keep_copy = True
-    claw.tfinal = 2.0
+    claw.tfinal = 100.
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
     claw.outdir = outdir
@@ -114,19 +137,31 @@ def setplot(plotdata):
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Figure for q[0]
-    plotfigure = plotdata.new_plotfigure(name='Water height', figno=0)
+    plotfigure = plotdata.new_plotfigure(name='Surface level', figno=0)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.xlimits = [-5.0,5.0]
-    plotaxes.title = 'Water height'
+    plotaxes.ylimits = [-0.5,3.5]
+    plotaxes.title = 'Surface level'
     plotaxes.axescmd = 'subplot(311)'
 
-    # Set up for item on these axes:
+    # Set up for items on these axes:
+    def surface_level(current_data):
+       h = current_data.q[0,:]
+       return h + B
     plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = 0
+    plotitem.plot_var = surface_level
     plotitem.plotstyle = '-'
     plotitem.color = 'b'
+    plotitem.kwargs = {'linewidth':3}
+
+    def bathymetry(current_data):
+       return B
+    plotitem = plotaxes.new_plotitem(plot_type='1d')
+    plotitem.plot_var = bathymetry
+    plotitem.plotstyle = '-'
+    plotitem.color = 'g'
     plotitem.kwargs = {'linewidth':3}
 
     # Figure for q[1]
