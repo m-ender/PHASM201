@@ -1,13 +1,25 @@
-ROSSBY
+GEOSTROPHIC
+FLAT
 10
 10
 
-Only the first 3 lines of this file are read.
+Only the first 4 lines of this file are read.
 The first line specifies the test model to be set up
 and can be one of the following strings:
 
     STILL_LAKE      Flat surface, no momentum
     ROSSBY          A Rossby adjustment problem
+    GEOSTROPHIC     A Gausssian hump of water in
+                    geostrophic equilibrium.
+
+The second line specifies the bathymetry and can be one
+of the following strings:
+
+    FLAT            Flat bottom, B = 0
+    GAUSSIAN        B = 0.5*exp(-128*x^2)
+    PARABOLIC_HUMP  B = 0.5 - 32*x^2    for |x| < 0.25
+                        0              otherwise
+    PARABOLIC_BOWL  B = 2*x^2
 
 The second value is the maximum time T of the simulation.
 The third value is the Kelvin number K for the simulation.

@@ -30,7 +30,10 @@ import os
 import numpy as np
 from clawpack import riemann
 
+Resolution = 500
+
 Scenario = ''
+Bathymetry = ''
 T = 10.
 K = 10.
 
@@ -41,20 +44,20 @@ if not os.path.isfile('pyclaw.data'):
 with open('pyclaw.data') as config:
     lines = iter(filter(None, [line.strip() for line in config]))
     Scenario = next(lines).upper()
+    Bathymetry = next(lines).upper()
     T = float(next(lines))
     K = float(next(lines))
 
 # Reserve variables for bathymetry
 # TODO: Can we store this somewhere in the Clawpack state?
-B = np.zeros(500)
-Bx = np.zeros(500)
+B = np.zeros(Resolution)
+Bx = np.zeros(Resolution)
 
 def qinit(state,x_min,x_max):
     xc = state.grid.x.centers
 
     if Scenario == 'STILL_LAKE':
-        state.q[0,:] = 0 * xc + 1.0
-        state.q[0,:] -= B # Adjust for bathymetry
+        state.q[0,:] = 0 * xc + 1.0 - B
         # x-momentum
         state.q[1,:] = 0 * xc
         # y-momentum
@@ -63,29 +66,44 @@ def qinit(state,x_min,x_max):
     elif Scenario == 'ROSSBY':
         x0 = 0.
 
-        # Left state
+        # Edge state
         hl = 1.
         ul = 0.
         vl = 0.
 
-        # Right state
+        # Central state
         hr = 3.
         ur = 0.
         vr = 0.
         # Water depth
-        state.q[0,:] = (hl-hr) * (xc <= -0.2) + hr + (hl-hr) * (xc > 0.2)
+        state.q[0,:] = hl + (hr-hl) * (xc > -0.2) * (xc < 0.2)
         state.q[0,:] -= B # Adjust for bathymetry
         # x-momentum
-        state.q[1,:] = (hl*ul-hr*ur) * (xc <= -0.2) + hr*ur + (hl*ul-hr*ur) * (xc > 0.2)
+        state.q[1,:] = hl*ul + (hr*ur-hl*ul) * (xc > -0.2) * (xc < 0.2)
         # y-momentum
-        state.q[2,:] = (hl*vl-hr*vr) * (xc <= -0.2) + hr*vr + (hl*vl-hr*vr) * (xc > 0.2)
+        state.q[2,:] = hl*vl + (hr*vr-hl*vl) * (xc > -0.2) * (xc < 0.2)
+
+    elif Scenario == 'GEOSTROPHIC':
+        h = 1.0 + 0.5*np.exp(-128*xc*xc) - B
+        hx = np.gradient(h, 1./Resolution)
+        state.q[0,:] = h
+        state.q[1,:] = 0 * xc
+        state.q[2,:] = h*(hx + Bx) / K
+
 
 def init_topo(state,x_min,x_max):
     xc = state.grid.x.centers
 
     global B, Bx
-    B = 0*xc #np.exp(-xc*xc)
-    Bx = np.gradient(B, 10./500)
+    if Bathymetry == 'FLAT':
+        B = 0*xc
+    elif Bathymetry == 'GAUSSIAN':
+        B = 0.5*np.exp(-128*xc*xc)
+    elif Bathymetry == 'PARABOLIC_HUMP':
+        B = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
+    elif Bathymetry == 'PARABOLIC_BOWL':
+        B = 2.0 * xc*xc
+    Bx = np.gradient(B, 1./Resolution)
 
 def step_source(solver,state,dt):
     """
@@ -107,13 +125,13 @@ def step_source(solver,state,dt):
 
     X = state.c_centers
 
-    qstar[1,:] = q[1,:] + dt2 * hv * K - h * Bx
+    qstar[1,:] = q[1,:] + dt2 * (hv * K - h * Bx)
     qstar[2,:] = q[2,:] - dt2 * hu * K
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
-    q[1,:] = q[1,:] + dt * hv * K - h * Bx
+    q[1,:] = q[1,:] + dt * (hv * K - h * Bx)
     q[2,:] = q[2,:] - dt * hu * K
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
@@ -133,7 +151,7 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     xlower = -0.5
     xupper = 0.5
-    mx = 500
+    mx = Resolution
     x = pyclaw.Dimension('x',xlower,xupper,mx)
     domain = pyclaw.Domain(x)
     num_eqn = 3
@@ -169,7 +187,12 @@ def setplot(plotdata):
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.xlimits = [-0.5,0.5]
-    plotaxes.ylimits = [-0.5,3.5]
+    max_h = {
+        "STILL_LAKE": 1.2,
+        "ROSSBY": 3.5,
+        "GEOSTROPHIC": 1.7
+    }[Scenario]
+    plotaxes.ylimits = [0.0,max_h]
     plotaxes.title = 'Surface level'
     plotaxes.axescmd = 'subplot(311)'
 
