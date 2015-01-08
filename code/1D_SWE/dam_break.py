@@ -14,39 +14,71 @@ Solve the x-split two-dimensional shallow water equations:
 
 Here h is the depth, u is the x-velocity, v is the y-velocity
 and g is the gravitational constant.
-The default initial condition used here models a dam break.
+If we scale x and y on L, the width of the domain, h and B on H
+the typical water depth, u and v on c = sqrt(gH) the typical
+wave speed and t on T = L/c, we obtain equations of a single
+parameter K = fL/c:
+
+.. math::
+    h_t + (hu)_x & = 0 \\
+    (hu)_t + (hu^2 + \frac{1}{2}h^2)_x & = Khv - h B_x \\
+    (hv)_t + (huv)_x = -Khu.
+
 """
 
+import os
 import numpy as np
 from clawpack import riemann
 
-f = 1.
-# Initialise bathymetry
-# TODO: Turn this into a proper function and store it somewhere in the Clawpack state.
+Scenario = ''
+T = 10.
+K = 10.
+
+if not os.path.isfile('pyclaw.data'):
+    print 'Configuration file pyclaw.data not found.'
+    exit()
+
+with open('pyclaw.data') as config:
+    lines = iter(filter(None, [line.strip() for line in config]))
+    Scenario = next(lines).upper()
+    T = float(next(lines))
+    K = float(next(lines))
+
+# Reserve variables for bathymetry
+# TODO: Can we store this somewhere in the Clawpack state?
 B = np.zeros(500)
 Bx = np.zeros(500)
 
 def qinit(state,x_min,x_max):
     xc = state.grid.x.centers
 
-    x0 = 0.
+    if Scenario == 'STILL_LAKE':
+        state.q[0,:] = 0 * xc + 1.0
+        state.q[0,:] -= B # Adjust for bathymetry
+        # x-momentum
+        state.q[1,:] = 0 * xc
+        # y-momentum
+        state.q[2,:] = 0 * xc
 
-    # Left state
-    hl = 1.
-    ul = 0.
-    vl = 0.
+    elif Scenario == 'ROSSBY':
+        x0 = 0.
 
-    # Right state
-    hr = 3.
-    ur = 0.
-    vr = 0.
-    # Water depth
-    state.q[0,:] = (hl-hr) * (xc <= -2.0) + hr + (hl-hr) * (xc > 2.0)
-    state.q[0,:] -= B # Adjust for bathymetry
-    # x-momentum
-    state.q[1,:] = (hl*ul-hr*ur) * (xc <= -2.0) + hr*ur + (hl*ul-hr*ur) * (xc > 2.0)
-    # y-momentum
-    state.q[2,:] = (hl*vl-hr*vr) * (xc <= -2.0) + hr*vr + (hl*vl-hr*vr) * (xc > 2.0)
+        # Left state
+        hl = 1.
+        ul = 0.
+        vl = 0.
+
+        # Right state
+        hr = 3.
+        ur = 0.
+        vr = 0.
+        # Water depth
+        state.q[0,:] = (hl-hr) * (xc <= -0.2) + hr + (hl-hr) * (xc > 0.2)
+        state.q[0,:] -= B # Adjust for bathymetry
+        # x-momentum
+        state.q[1,:] = (hl*ul-hr*ur) * (xc <= -0.2) + hr*ur + (hl*ul-hr*ur) * (xc > 0.2)
+        # y-momentum
+        state.q[2,:] = (hl*vl-hr*vr) * (xc <= -0.2) + hr*vr + (hl*vl-hr*vr) * (xc > 0.2)
 
 def init_topo(state,x_min,x_max):
     xc = state.grid.x.centers
@@ -71,20 +103,18 @@ def step_source(solver,state,dt):
     hu   = q[1,:]
     hv   = q[2,:]
 
-    g = state.problem_data['grav']
-
     qstar = np.empty(q.shape)
 
     X = state.c_centers
 
-    qstar[1,:] = q[1,:] + dt2 * hv * f - g * h * Bx
-    qstar[2,:] = q[2,:] - dt2 * hu * f
+    qstar[1,:] = q[1,:] + dt2 * hv * K - h * Bx
+    qstar[2,:] = q[2,:] - dt2 * hu * K
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
-    q[1,:] = q[1,:] + dt * hv * f - g * h * Bx
-    q[2,:] = q[2,:] - dt * hu * f
+    q[1,:] = q[1,:] + dt * hv * K - h * Bx
+    q[2,:] = q[2,:] - dt * hu * K
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
@@ -101,23 +131,20 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     solver.bc_lower[0] = pyclaw.BC.extrap
     solver.bc_upper[0] = pyclaw.BC.extrap
 
-    xlower = -5.0
-    xupper = 5.0
+    xlower = -0.5
+    xupper = 0.5
     mx = 500
     x = pyclaw.Dimension('x',xlower,xupper,mx)
     domain = pyclaw.Domain(x)
     num_eqn = 3
     state = pyclaw.State(domain,num_eqn)
 
-    # Gravitational constant
-    state.problem_data['grav'] = 1.0
-
     init_topo(state, xlower, xupper)
     qinit(state, xlower, xupper)
 
     claw = pyclaw.Controller()
     claw.keep_copy = True
-    claw.tfinal = 100.
+    claw.tfinal = T
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
     claw.outdir = outdir
@@ -141,7 +168,7 @@ def setplot(plotdata):
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = [-5.0,5.0]
+    plotaxes.xlimits = [-0.5,0.5]
     plotaxes.ylimits = [-0.5,3.5]
     plotaxes.title = 'Surface level'
     plotaxes.axescmd = 'subplot(311)'
@@ -170,7 +197,7 @@ def setplot(plotdata):
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.axescmd = 'subplot(312)'
-    plotaxes.xlimits = [-5.0,5.0]
+    plotaxes.xlimits = [-0.5,0.5]
     plotaxes.title = 'x-Momentum'
 
     # Set up for item on these axes:
@@ -186,7 +213,7 @@ def setplot(plotdata):
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.axescmd = 'subplot(313)'
-    plotaxes.xlimits = [-5.0,5.0]
+    plotaxes.xlimits = [-0.5,0.5]
     plotaxes.title = 'y-Momentum'
 
     # Set up for item on these axes:

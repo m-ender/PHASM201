@@ -1,0 +1,13 @@
+ROSSBY
+10
+10
+
+Only the first 3 lines of this file are read.
+The first line specifies the test model to be set up
+and can be one of the following strings:
+
+    STILL_LAKE      Flat surface, no momentum
+    ROSSBY          A Rossby adjustment problem
+
+The second value is the maximum time T of the simulation.
+The third value is the Kelvin number K for the simulation.

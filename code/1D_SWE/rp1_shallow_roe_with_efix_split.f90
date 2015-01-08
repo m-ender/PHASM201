@@ -2,9 +2,10 @@
 subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
 ! =========================================================
 
-! Solve Riemann problems for the x-split 2D shallow water equations
+! Solve Riemann problems for the non-dimensionalised x-split 2D
+! shallow water equations
 !   (h)_t + (u h)_x = 0
-!   (uh)_t + ( uuh + .5*gh^2 )_x = 0
+!   (uh)_t + ( uuh + .5*h^2 )_x = 0
 !   (vh)_t + (uvh)_x = 0
 ! using Roe's approximate Riemann solver with entropy fix for
 ! transonic rarefractions.
@@ -40,9 +41,6 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     dimension amdq(meqn,           1-mbc:maxmx+mbc)
     dimension apdq(meqn,           1-mbc:maxmx+mbc)
 
-!     # Gravity constant set in the shallow1D.py file
-    common /cparam/ grav
-
 !     # Local storage
 !     ---------------
     dimension delta(3)
@@ -61,7 +59,7 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
         hsq2 = hsqrtl + hsqrtr
         ubar = (qr(2,i-1)/hsqrtl + ql(2,i)/hsqrtr) / hsq2
         vbar = (qr(3,i-1)/hsqrtl + ql(3,i)/hsqrtr) / hsq2
-        cbar=dsqrt(0.5d0*grav*(qr(1,i-1) + ql(1,i)))
+        cbar=dsqrt(0.5d0*(qr(1,i-1) + ql(1,i)))
 
     !     # delta(1)=h(i)-h(i-1), delta(2)=hu(i)-hu(i-1), delta(3)=hv(i)-hv(i-1)
         delta(1) = ql(1,i) - qr(1,i-1)
@@ -135,7 +133,7 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     !        ---------------
 
     !        # u-c in left state (cell i-1)
-        s0 = qr(2,i-1)/qr(1,i-1) - dsqrt(grav*qr(1,i-1))
+        s0 = qr(2,i-1)/qr(1,i-1) - dsqrt(qr(1,i-1))
 
     !        # check for fully supersonic case:
         if (s0 > 0.d0 .AND. s(1,i) > 0.d0)  then
@@ -149,7 +147,7 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     !        # u-c to right of 1-wave
         hr1  = qr(1,i-1) + wave(1,1,i)
         uhr1 = qr(2,i-1) + wave(2,1,i)
-        s1 =  uhr1/hr1 - dsqrt(grav*hr1)
+        s1 =  uhr1/hr1 - dsqrt(hr1)
 
         if (s0 < 0.d0 .AND. s1 > 0.d0) then
         !            # transonic rarefaction in the 1-wave
@@ -182,12 +180,12 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     !        # check 3-wave:
     !        ---------------
     !        # u+c in right state  (cell i)
-        s03 = ql(2,i)/ql(1,i) + dsqrt(grav*ql(1,i))
+        s03 = ql(2,i)/ql(1,i) + dsqrt(ql(1,i))
 
     !        # u+c to left of 3-wave
         hl3  = ql(1,i) - wave(1,3,i)
         uhl3 = ql(2,i) - wave(2,3,i)
-        s3 = uhl3/hl3 + dsqrt(grav*hl3)
+        s3 = uhl3/hl3 + dsqrt(hl3)
 
         if (s3 < 0.d0 .AND. s03 > 0.d0) then
         !            # transonic rarefaction in the 3-wave
