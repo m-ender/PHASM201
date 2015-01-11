@@ -30,7 +30,7 @@ import os
 import numpy as np
 from clawpack import riemann
 
-Resolution = 500
+Resolution = 100
 
 Scenario = ''
 Bathymetry = ''
@@ -45,6 +45,7 @@ with open('pyclaw.data') as config:
     lines = iter(filter(None, [line.strip() for line in config]))
     Scenario = next(lines).upper()
     Bathymetry = next(lines).upper()
+    Resolution = int(next(lines))
     T = float(next(lines))
     K = float(next(lines))
 
@@ -61,6 +62,12 @@ def qinit(state,x_min,x_max):
         # x-momentum
         state.q[1,:] = 0 * xc
         # y-momentum
+        state.q[2,:] = 0 * xc
+
+    elif Scenario == 'WAVE':
+        h = 1 + 0.2 * (xc > -0.4) * (xc < -0.3)
+        state.q[0,:] = h - B
+        state.q[1,:] = 0 * xc
         state.q[2,:] = 0 * xc
 
     elif Scenario == 'ROSSBY':
@@ -97,6 +104,8 @@ def init_topo(state,x_min,x_max):
     global B, Bx
     if Bathymetry == 'FLAT':
         B = 0*xc
+    elif Bathymetry == 'SLOPE':
+        B = 0.4 + 0.8*xc
     elif Bathymetry == 'GAUSSIAN':
         B = 0.5*np.exp(-128*xc*xc)
     elif Bathymetry == 'PARABOLIC_HUMP':
@@ -189,6 +198,7 @@ def setplot(plotdata):
     plotaxes.xlimits = [-0.5,0.5]
     max_h = {
         "STILL_LAKE": 1.2,
+        "WAVE": 1.2,
         "ROSSBY": 3.5,
         "GEOSTROPHIC": 1.7
     }[Scenario]
