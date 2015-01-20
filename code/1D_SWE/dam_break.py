@@ -192,8 +192,8 @@ def setplot(plotdata):
     """
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
-    # Figure for q[0]
-    plotfigure = plotdata.new_plotfigure(name='Surface level', figno=0)
+    # Figure for Surface Level and Potential Vorticity
+    plotfigure = plotdata.new_plotfigure(name='Surface level and PV', figno=0)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
@@ -206,12 +206,12 @@ def setplot(plotdata):
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
     plotaxes.title = 'Surface level'
-    plotaxes.axescmd = 'subplot(311)'
+    plotaxes.axescmd = 'subplot(211)'
 
     # Set up for items on these axes:
     def surface_level(current_data):
-       h = current_data.q[0,:]
-       return h + B
+        h = current_data.q[0,:]
+        return h + B
     plotitem = plotaxes.new_plotitem(plot_type='1d')
     plotitem.plot_var = surface_level
     plotitem.plotstyle = '-'
@@ -219,19 +219,43 @@ def setplot(plotdata):
     plotitem.kwargs = {'linewidth':3}
 
     def bathymetry(current_data):
-       return B
+        return B
     plotitem = plotaxes.new_plotitem(plot_type='1d')
     plotitem.plot_var = bathymetry
     plotitem.plotstyle = '-'
     plotitem.color = 'g'
     plotitem.kwargs = {'linewidth':3}
 
-    # Figure for q[1]
-    #plotfigure = plotdata.new_plotfigure(name='x-Momentum', figno=1)
+    # Set up for axes in this figure:
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.xlimits = [-0.5,0.5]
+    plotaxes.title = 'Potential vorticity'
+    plotaxes.axescmd = 'subplot(212)'
+
+    # Set up for items on these axes:
+    def potential_vorticity(current_data):
+        h = current_data.q[0,:]
+        hu = current_data.q[1,:]
+        hv = current_data.q[2,:]
+
+        vx = np.gradient(hv/h, 1./Resolution)
+
+        pv = (vx + K) / h
+
+        return pv
+
+    plotitem = plotaxes.new_plotitem(plot_type='1d')
+    plotitem.plot_var = potential_vorticity
+    plotitem.plotstyle = '-'
+    plotitem.color = 'b'
+    plotitem.kwargs = {'linewidth':3}
+
+    # Figure for momentum components
+    plotfigure = plotdata.new_plotfigure(name='Momentum', figno=1)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
-    plotaxes.axescmd = 'subplot(312)'
+    plotaxes.axescmd = 'subplot(211)'
     plotaxes.xlimits = [-0.5,0.5]
     plotaxes.title = 'x-Momentum'
 
@@ -242,12 +266,9 @@ def setplot(plotdata):
     plotitem.color = 'b'
     plotitem.kwargs = {'linewidth':3}
 
-    # Figure for q[2]
-    #plotfigure = plotdata.new_plotfigure(name='y-Momentum', figno=2)
-
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
-    plotaxes.axescmd = 'subplot(313)'
+    plotaxes.axescmd = 'subplot(212)'
     plotaxes.xlimits = [-0.5,0.5]
     plotaxes.title = 'y-Momentum'
 
