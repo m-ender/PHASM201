@@ -5,3 +5,5 @@
 *.blg
 *.log
 *.synctex.gz
+
+*.dmp

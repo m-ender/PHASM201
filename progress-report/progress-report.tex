@@ -1,0 +1,126 @@
+\documentclass[a4paper,onecolumn,11pt]{article}
+
+% Use for onecolumn layout
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+
+\usepackage{graphicx}
+
+\usepackage[utf8]{inputenc}
+\usepackage[hyphens]{url}
+
+\usepackage{natbib}
+\usepackage{textcomp}
+\usepackage[greek,english]{babel}
+\usepackage{amsmath}
+
+\frenchspacing
+%\renewcommand{\thefootnote}{\alph{footnote}}
+
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
+% Different command for lower-case greek letters as they need a different command for bold letters.
+\newcommand{\gvec}[1]{\ensuremath{\boldsymbol{#1}}}
+\newcommand{\guvec}[1]{\ensuremath{\gvec{\hat{#1}}}}
+\newcommand{\dif}{\mathrm{d}}
+
+\begingroup
+\lccode`\~=`\ %
+\lowercase{%
+  \gdef\assignment{\setcounter{word}{0}%
+    \catcode`~=\active
+    \def~{\space\stepcounter{word}}}}%
+\endgroup
+\newcounter{word}
+\def\endassignment{\stepcounter{word}%
+  \begin{flushright}%
+  (\arabic{word} words)%
+  \end{flushright}%
+}
+
+\title{Progress Report\\\small Accurate methods for computing rotation-dominated flows}
+
+\author{Martin Büttner, University College London}
+\date{11 January 2015}
+
+\begin{document}
+
+\maketitle
+
+This report summarises the progress made on the project during the first term and re-evaluates the time line for the second term.
+
+As planned in the initial project outline, I spent November reading through the papers I found during the literature survey. I discovered that most methods are beyond the scope of the project, as they focus on wet/dry fronts, geometrical source terms, or are not based on finite-volume methods to begin with. Four papers are of particular relevance, \citet{leveque1998balancing}, \citet{hubbard2000flux}, \citet{rogers2003mathematical} and \citet{chertockwell}. These are the methods I will focus on evaluating. It should be noted that \citet{chertockwell} does not use Godunov methods but central upwind and evolution Galerkin methods instead. These are finite-volume methods which do not require the solution of a Riemann problem. However, it might be possible to adapt their general approach to Godunov-type methods.
+
+After consultation with Prof. Johnson, I decided to deviate from the original project schedule and spend another month on re-reading \citet{leveque2002finite} as well as reading parts of \citet{toro2001shock} to solidify my understanding of Godunov methods for non-linear systems, as well as approximate Riemann solvers (the Roe solver in particular). This leaves less time for the implementation phase of the project, but I believe it was time well spent.
+
+Another important decision I made together with Prof. Johnson, was to limit the initial evaluation to one-dimensional systems using the $x$-split shallow water equations. Since I was going to use a dimensional splitting for two-dimensional setups anyway, this is equivalent to setting up a problem which is independent of $y$ and computing only a single slice of the grid for constant $y$. This has several advantages:
+
+\begin{itemize}
+  \item Dimensional splitting introduces inaccuracy, so avoiding two-dimensional problems will show the shortcomings of the well-balanced methods themselves more clearly.
+  \item Limiting the computation to one dimension will greatly speed up the solver, which makes the use of adaptive mesh refinement unnecessary (which in turn will simplify setting up the solvers).
+  \item It will be much simpler to find and set up non-trivial equilibria in one dimension, in order to evaluate the performance of well-balanced methods.
+\end{itemize}
+
+On the technical side, I have set up a git\footnote{\url{http://git-scm.com/}} repository to track changes to all work related to the project (including \LaTeX documents and source code for Clawpack projects). I am working on the code in a virtual machine using VMware Player\footnote{\url{http://en.wikipedia.org/wiki/VMware_Player}} running Ubuntu\footnote{\url{http://www.ubuntu.com/}}.
+
+I finished re-reading the relevant parts of \citet{leveque2002finite} at the end of the first time, and have now set up a framework for evaluating the numerical methods.
+
+To begin with, Professor Johnson and I have decided on a particular parameterisation of the $x$-split rotating shallow water equations with bathymetry. The equations themselves are
+
+\begin{eqnarray*}
+  h_t + (hu)_x & = & 0 \\
+  (hu)_t + \left(hu^2 + \frac{1}{2}gh^2\right)_x & = & fhv - gh B_x \\
+  (hv)_t + (huv)_x &=& -fhu.
+\end{eqnarray*}
+
+By rescaling $h$ and $B$ on a typical depth $H$, $x$ on the domain width $L$, $u$ and $v$ on the typical wave speed $c = \sqrt{gH}$ and $t$ on a time scale $T = L/c$, the equations simplify and are governed by a single parameter $K = fL/c$:
+
+\begin{eqnarray*}
+  h_t + (hu)_x & = & 0 \\
+  (hu)_t + \left(hu^2 + \frac{1}{2}h^2\right)_x & = & Khv - h B_x \\
+  (hv)_t + (huv)_x &=& -Khu.
+\end{eqnarray*}
+
+I have implemented an unbalanced Roe solver for these equations. It uses Clawpack to solve the homogeneous equations, and then solves both source terms using a two-stage, second-order Runge--Kutta method.
+
+In order to evaluate the different methods, the framework can be configured through five parameters:
+
+\begin{itemize}
+  \item The number of grid cells to use over the $[-0.5, 0.5]$ range.
+  \item The maximum time up to which the equations should be solved.
+  \item The Coriolis parameter $K$.
+  \item One of several fixed bathymetry profiles.
+  \item One of several initial conditions.
+\end{itemize}
+
+The initial conditions have been selected to model several equilibria, as well as small perturbations about equilibrium. They were also chosen to ensure that the balance between all terms can be tested individually. The following bathymetry profiles have been implemented:
+
+\begin{itemize}
+  \item Flat bed. $B = 0$.
+  \item Sloped bed. $B = 0.4 + 0.8x$.
+  \item Gaussian ridge. $B = 0.5 \exp(-128x^2)$.
+  \item Parabolic ridge. $B = 0.5 - 32x^2$, for $|x| < 0.125$, $B = 0$, otherwise.
+  \item Parabolic bowl. $B = 2x^2$.
+\end{itemize}
+
+In the following, denoted the water surface elevation $\eta = h + B$. Independently of the bathymetry profiles, the following initial conditions have been chosen:
+
+\begin{itemize}
+  \item Still lake. $u = v = 0$ and $\eta = 1$.
+  \item The domain starts at rest, but there is a small perturbation in $\eta$, which separates into a left-going wave (which leaves the domain) and a right-going wave (which passes over the bathymetry, if any). $\eta = 1.2$, for $-0.4 < x < -0.3$, $\eta = 1$, otherwise.
+  \item A non-trivial geostrophic equilibrium. The surface elevation follows a Gaussian profile $\eta = 0.5 \exp(-128x^2)$, and the transverse velocity is chosen such that $v = h\eta_x / K$. This is a steady solution to the equations for any bathymetry (and in fact, any surface profile).
+  \item Steady subcritical, supercritical and transcritical flow. Such solutions have been described in \citet{esler2005steady}.\footnote{This scenario is not yet implemented.}
+\end{itemize}
+
+By careful choice of bathymetry and initial condition, the pairwise balance between terms can be tested individually. A geostrophic equilibrium over a flat bed implies a balance between flux and Coriolis terms. A still lake over non-uniform bathymetry implies a balance between flux and bathymetry terms. A geostrophic equilibrium over a Gaussian ridge requires a balance between Coriolis and bathymetry terms. All three terms can be made to balance by choosing, for instance, a geostrophic equilibrium in a parabolic bowl.
+
+I was able to reproduce the known problems with unbalanced solvers (namely, the appearance in unphysical oscillations in equilibrium states), which form the motivation for this project. I was also able confirm that a balance between the source terms alone is already maintained, as expected (since both are computed with the same method).
+
+Moving forward, I will finish implementing the last set of initial conditions, and then begin implementing the balanced methods mentioned above. If time permits, I will then extend the methods to two dimensions in order to evaluate them on more elaborate models, and potentially apply them to novel problems.
+
+I am planning to finish the implementation phase by the end of February, which leaves all of March for producing results and writing the final report. To ensure that I can meet this schedule, I will aim to spend no more than 10 days on implementing each of the four methods. This should leave sufficient leeway to deal with unforeseen complications, or to be spent on further work mentioned in the previous paragraph.
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{plainnat}
+\bibliography{../common/bibliography}
+
+\end{document}
