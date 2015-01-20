@@ -1,5 +1,5 @@
 STILL_LAKE
-PARABOLIC_HUMP
+CLIFF
 100
 10
 10
@@ -23,6 +23,7 @@ of the following strings:
     PARABOLIC_HUMP  B = 0.5 - 32*x^2    for |x| < 0.25
                         0              otherwise
     PARABOLIC_BOWL  B = 2*x^2
+    CLIFF           B = (tanh(100x)+1)/4
 
 The third value is the number cells to use along x.
 The fourth value is the maximum time T of the simulation.

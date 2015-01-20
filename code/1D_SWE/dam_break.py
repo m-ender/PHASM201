@@ -112,6 +112,8 @@ def init_topo(state,x_min,x_max):
         B = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
     elif Bathymetry == 'PARABOLIC_BOWL':
         B = 2.0 * xc*xc
+    elif Bathymetry == 'CLIFF':
+        B = (np.tanh(100*xc)+1)/4
     Bx = np.gradient(B, 1./Resolution)
 
 def step_source(solver,state,dt):
