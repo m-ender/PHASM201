@@ -48,7 +48,7 @@
 
 \subsubsection*{27 October 2014}
 
-After finishing the literature survey and project outline, I set up the basic infrastructure for the project. All the data, code and written work will be maintained in a private \texttt{git}\footnote{\url{http://git-scm.com/}} repository at \url{https://github.com/mbuettner/PHASM201}. I've also set up individual \LaTeX projects for the literature survey, final report and this logbook.
+After finishing the literature survey and project outline, I set up the basic infrastructure for the project. All the data, code and written work will be maintained in a private \texttt{git}\footnote{\url{http://git-scm.com/}} repository at \url{https://github.com/mbuettner/PHASM201}. I've also set up individual \LaTeX\ projects for the literature survey, final report and this logbook.
 
 The coming month will be spent on reading papers about existing well-balanced methods in-depth to evaluate which ones are worth implementing during the second phase of the project.
 
@@ -94,9 +94,45 @@ Hence, I decided to start a detailed reading of \citet{toro2001shock} for next f
 
 \subsubsection*{30 December 2014}
 
-I ended up re-reading \citet{leveque2002finite} instead, which did greatly improve my understanding of the methods in general (including the Roe solver). An important decision I made with Prof. Johnson in the meantime is to restrict the methods to the dimensionally-split SWEs (in one dimension) for now. Since we were going to use a dimensional split for the 2D equations anyway, adding the second dimension does not actually provide anything new for studying the methods. Solving the equations in only one dimension instead has the advantage of running much faster (which allows for higher resolutions to be used), and makes it much easier to find interesting equilibrium states to test the methods.
+I ended up re-reading \citet{leveque2002finite} instead, which did greatly improve my understanding of the methods in general (including the Roe solver). An important decision I made with Prof. Johnson in the meantime is to restrict the methods to the dimensionally-split SWEs (in one dimension) for now. Since we were going to use a dimensional split for the 2D equations anyway, adding the second dimension does not actually provide anything new for studying the methods. Solving the equations in only one dimension instead has the advantage of running much faster (which allows for higher resolutions to be used), and makes it much easier to find interesting equilibrium states to test the methods. Furthermore, there is no necessity for AMR when restricting the tests to one dimension.
 
 I also found out that GeoClaw uses an f-wave based solver, which is well-balanced with respect to the bathymetry terms. It is not entirely clear whether it is also well-balanced with respect to the Coriolis terms. See \citet{berger2011geoclaw}. I might look into this, although the capabilities of the particular solver used by GeoClaw go well beyond the scope of this project (the solver is positivity-preserving and includes bed friction) -- it also has the major disadvantage of working with dimensional quantities, which makes it harder to compare to the non-dimensionalised solvers I intend to write myself.
+
+\subsubsection*{2 January 2015}
+
+I've spent some time setting up Clawpack on a local VM and made sure it works properly.
+
+\subsubsection*{4 January 2015}
+
+I've modified the 1D Roe solver provided with Clawpack to solve the $x$-split 2D SWEs instead. I've got handwritten workings of this, which I could use for the write-up of the final report. I also added the Coriolis and bathymetry source terms via a source-splitting --- they are computed by a second-order Runge--Kutta method. In addition, I've prepared some plotting routines which take the bathymetry into account.
+
+Computing the bathymetry source term via source-splitting is, of course, not well-balanced, but should act as the naive implementation for comparison. In fact, a simple Gaussian hump under a still lake is enough to produce unphysical oscillations within a very short time.
+
+\subsubsection*{6 January 2015}
+
+I had an extended meeting with Prof. Johnson today, in which we discussed the parameterisation of the equations, as well as relevant setups for numerical validation. We settled on the following:
+
+\begin{itemize}
+  \item Still lake with bathymetry and rotation.
+  \item Steady rotating flow over a ridge, looking at subcritical, supercritical and transcritical flows. See \citet{esler2005steady}.
+  \item Non-trivial geostrophic equilibrium with and without bathymetry.
+  \item Wave over a ridge, as a perturbation about equilibrium.
+  \item (Rossby adjustment problem.)
+\end{itemize}
+
+If we extend the validations to two dimensions later on, possible models are:
+
+\begin{itemize}
+  \item Uniform subcritical flow over a hump (under rotation). Exact solutions can be found with an elliptical solver.
+  \item Axisymmetric problems, which can be solved in one (radial) dimension, but which the hyperbolic solvers would treat as generic two-dimensional problems.
+  \item For more ideas, see \citet{rogers2001adaptive}.
+\end{itemize}
+
+\subsubsection*{10 January 2015}
+
+The last few days were spent on implementing the above test models, as well as improving the framework to be more flexibly configurable. The main decision I made was to allow for the bathymetry and the initial condition on the flow variables to be specified independently. This gives more flexibility in testing only individual balances. I also fixed a bug in the Runge--Kutta solver, which made the unbalanced oscillations much larger than they were supposed to be. Oscillations still appear on a still lake, but they are much smaller, and the grid resolution can be decreased considerably before they are visible on the scale of the typical water depth.
+
+The only initial conditions I haven't implemented yet are those foundin \citet{esler2005steady}, which I will focus on next week.
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
