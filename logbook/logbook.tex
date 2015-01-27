@@ -132,7 +132,15 @@ If we extend the validations to two dimensions later on, possible models are:
 
 The last few days were spent on implementing the above test models, as well as improving the framework to be more flexibly configurable. The main decision I made was to allow for the bathymetry and the initial condition on the flow variables to be specified independently. This gives more flexibility in testing only individual balances. I also fixed a bug in the Runge--Kutta solver, which made the unbalanced oscillations much larger than they were supposed to be. Oscillations still appear on a still lake, but they are much smaller, and the grid resolution can be decreased considerably before they are visible on the scale of the typical water depth.
 
-The only initial conditions I haven't implemented yet are those foundin \citet{esler2005steady}, which I will focus on next week.
+The only initial conditions I haven't implemented yet are those found in \citet{esler2005steady}, which I will focus on next week.
+
+\subsubsection*{27 January 2015}
+
+I spent last week preparing for the progress interview and implementing the final initial conditions. In that process I hit a minor roadblock, when the supposedly stable flows wouldn't settle and instead carry away most of the momentum out of the domain. Prof. Johnson suggested to introduce a transversal pressure gradient, such that the Coriolis force originating from the initial velocity is balanced away from the obstacle. This is equivalent to towing the obstacle through water in solid-body rotation and then switching into the rest-frame of the obstacle.
+
+This did indeed solve the problem, such that now the domain settles into a steady state within a very short time frame for most initial conditions. I decided to implement this a single parameterisable initial condition, instead of three for subcritical, transcritical and supercritical flow. This is a) because the velocities for these regimes depend on the Coriolis parameter, b) the phase space is a lot more complicated than these three cases --- in particular there are several transcritical states, as shown in \citet{esler2005steady}. By allowing to configure the background velocity manually, any point in phase space can be chosen to be examined.
+
+With this in place, I was able to set up subcritical and supercritical flows both with and without rotation, as several qualitatively different transcritical solutions. I will now start to implement the first of the balanced-solvers.
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
