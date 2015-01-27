@@ -1,8 +1,9 @@
-WAVE
-PARABOLIC_HUMP
-100
+STEADY_FLOW
+GAUSSIAN
+500
 10
 10
+1.2
 
 Only the first 5 lines of this file are read.
 The first line specifies the test model to be set up
@@ -13,6 +14,10 @@ and can be one of the following strings:
     ROSSBY          A Rossby adjustment problem.
     GEOSTROPHIC     A Gausssian hump of water in
                     geostrophic equilibrium.
+    STEADY_FLOW     Uniform flow at a specified velocity.
+                    A transversal pressure gradient will
+                    be imposed to prevent tilting of the
+                    surface along y.
 
 The second line specifies the bathymetry and can be one
 of the following strings:
@@ -28,3 +33,5 @@ of the following strings:
 The third value is the number cells to use along x.
 The fourth value is the maximum time T of the simulation.
 The fifth value is the Kelvin number K for the simulation.
+The sixth value is the initial x-velocity of the domain.
+    This value is only used for the STEADY_FLOW model.

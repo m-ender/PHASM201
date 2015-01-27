@@ -36,6 +36,7 @@ Scenario = ''
 Bathymetry = ''
 T = 10.
 K = 10.
+U = 0.
 
 if not os.path.isfile('pyclaw.data'):
     print 'Configuration file pyclaw.data not found.'
@@ -48,6 +49,8 @@ with open('pyclaw.data') as config:
     Resolution = int(next(lines))
     T = float(next(lines))
     K = float(next(lines))
+    if Scenario == 'STEADY_FLOW':
+        U = float(next(lines))
 
 # Reserve variables for bathymetry
 # TODO: Can we store this somewhere in the Clawpack state?
@@ -97,6 +100,14 @@ def qinit(state,x_min,x_max):
         state.q[1,:] = 0 * xc
         state.q[2,:] = h*(hx + Bx) / K
 
+    elif Scenario == 'STEADY_FLOW':
+        h = 1.0 - B
+        u = U
+
+        state.q[0,:] = h
+        state.q[1,:] = h*u
+        state.q[2,:] = 0 * xc
+
 
 def init_topo(state,x_min,x_max):
     xc = state.grid.x.centers
@@ -136,14 +147,17 @@ def step_source(solver,state,dt):
 
     X = state.c_centers
 
+    v_balance = U * K
+
     qstar[1,:] = q[1,:] + dt2 * (hv * K - h * Bx)
-    qstar[2,:] = q[2,:] - dt2 * hu * K
+    qstar[2,:] = q[2,:] - dt2 * (hu * K - h * v_balance)
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
     q[1,:] = q[1,:] + dt * (hv * K - h * Bx)
-    q[2,:] = q[2,:] - dt * hu * K
+    q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
+
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
@@ -202,7 +216,8 @@ def setplot(plotdata):
         "STILL_LAKE": 1.2,
         "WAVE": 1.2,
         "ROSSBY": 3.5,
-        "GEOSTROPHIC": 1.7
+        "GEOSTROPHIC": 1.7,
+        "STEADY_FLOW": 1.7,
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
     plotaxes.title = 'Surface level'
