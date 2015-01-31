@@ -119,6 +119,8 @@ def init_topo(state,x_min,x_max):
         B = 0.4 + 0.8*xc
     elif Bathymetry == 'GAUSSIAN':
         B = 0.5*np.exp(-128*xc*xc)
+    elif Bathymetry == 'COSINE':
+        B = 0.5*np.cos(np.pi*xc*4)**2 * (xc > -0.125) * (xc < 0.125)
     elif Bathymetry == 'PARABOLIC_HUMP':
         B = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
     elif Bathymetry == 'PARABOLIC_BOWL':
@@ -159,6 +161,20 @@ def step_source(solver,state,dt):
     q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
 
 
+def qbc_source_split_lower(state,dim,t,qbc,num_ghost):
+    for i in range(num_ghost):
+        qbc[:,i] = qbc[:,num_ghost]
+        # Fix height individually
+        qbc[0,i] += B[num_ghost] - B[i]
+
+
+def qbc_source_split_upper(state,dim,t,qbc,num_ghost):
+    for i in range(num_ghost):
+        qbc[:,-1-i] = qbc[:,-1-num_ghost]
+        # Fix height individually
+        qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
+
+
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
     import shallow_roe_with_efix_split
@@ -171,8 +187,10 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     solver.kernel_language=kernel_language
 
-    solver.bc_lower[0] = pyclaw.BC.extrap
-    solver.bc_upper[0] = pyclaw.BC.extrap
+    solver.bc_lower[0] = pyclaw.BC.custom
+    solver.bc_upper[0] = pyclaw.BC.custom
+    solver.user_bc_lower = qbc_source_split_lower
+    solver.user_bc_upper = qbc_source_split_upper
 
     xlower = -0.5
     xupper = 0.5

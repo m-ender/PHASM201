@@ -1,9 +1,9 @@
-STEADY_FLOW
-GAUSSIAN
-500
+STILL_LAKE
+CLIFF
+100
 10
 10
-1.2
+0.2
 
 Only the first 5 lines of this file are read.
 The first line specifies the test model to be set up
@@ -25,8 +25,10 @@ of the following strings:
     FLAT            Flat bottom, B = 0
     SLOPE           Linear slope increasing with x
     GAUSSIAN        B = 0.5*exp(-128*x^2)
-    PARABOLIC_HUMP  B = 0.5 - 32*x^2    for |x| < 0.25
-                        0              otherwise
+    COSINE          B = 0.5*cos(pi*x*4) for |x| < 0.125
+                        0               otherwise
+    PARABOLIC_HUMP  B = 0.5 - 32*x^2    for |x| < 0.125
+                        0               otherwise
     PARABOLIC_BOWL  B = 2*x^2
     CLIFF           B = (tanh(100x)+1)/4
 
