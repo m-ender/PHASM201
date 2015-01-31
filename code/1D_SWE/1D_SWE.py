@@ -161,14 +161,14 @@ def step_source(solver,state,dt):
     q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
 
 
-def qbc_source_split_lower(state,dim,t,qbc,num_ghost):
+def qbc_source_split_lower(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,i] = qbc[:,num_ghost]
         # Fix height individually
         qbc[0,i] += B[num_ghost] - B[i]
 
 
-def qbc_source_split_upper(state,dim,t,qbc,num_ghost):
+def qbc_source_split_upper(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,-1-i] = qbc[:,-1-num_ghost]
         # Fix height individually
