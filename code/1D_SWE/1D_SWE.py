@@ -32,6 +32,7 @@ from clawpack import riemann
 
 Resolution = 100
 
+Solver = ''
 Scenario = ''
 Bathymetry = ''
 T = 10.
@@ -44,6 +45,7 @@ if not os.path.isfile('pyclaw.data'):
 
 with open('pyclaw.data') as config:
     lines = iter(filter(None, [line.strip() for line in config]))
+    Solver = next(lines).upper()
     Scenario = next(lines).upper()
     Bathymetry = next(lines).upper()
     Resolution = int(next(lines))
@@ -56,6 +58,8 @@ with open('pyclaw.data') as config:
 # TODO: Can we store this somewhere in the Clawpack state?
 B = np.zeros(Resolution)
 Bx = np.zeros(Resolution)
+B_ghost = np.zeros(Resolution+4)
+Bx_ghost = np.zeros(Resolution+4)
 
 def qinit(state,x_min,x_max):
     xc = state.grid.x.centers
@@ -109,25 +113,27 @@ def qinit(state,x_min,x_max):
         state.q[2,:] = 0 * xc
 
 
-def init_topo(state,x_min,x_max):
-    xc = state.grid.x.centers
+def init_topo(state,x_min,x_max,dx):
+    xc = state.grid.c_centers_with_ghost(2)[0]
 
-    global B, Bx
+    global B, Bx, B_ghost, Bx_ghost
     if Bathymetry == 'FLAT':
-        B = 0*xc
+        B_ghost = 0*xc
     elif Bathymetry == 'SLOPE':
-        B = 0.4 + 0.8*xc
+        B_ghost = 0.4 + 0.8*xc
     elif Bathymetry == 'GAUSSIAN':
-        B = 0.5*np.exp(-128*xc*xc)
+        B_ghost = 0.5*np.exp(-128*xc*xc)
     elif Bathymetry == 'COSINE':
-        B = 0.5*np.cos(np.pi*xc*4)**2 * (xc > -0.125) * (xc < 0.125)
+        B_ghost = 0.5*np.cos(np.pi*xc*4)**2 * (xc > -0.125) * (xc < 0.125)
     elif Bathymetry == 'PARABOLIC_HUMP':
-        B = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
+        B_ghost = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
     elif Bathymetry == 'PARABOLIC_BOWL':
-        B = 2.0 * xc*xc
+        B_ghost = 2.0 * xc*xc
     elif Bathymetry == 'CLIFF':
-        B = (np.tanh(100*xc)+1)/4
-    Bx = np.gradient(B, 1./Resolution)
+        B_ghost = (np.tanh(100*xc)+1)/4
+    Bx_ghost = np.gradient(B_ghost, dx)
+    B = B_ghost[2:-2]
+    Bx = Bx_ghost[2:-2]
 
 def step_source(solver,state,dt):
     """
@@ -174,13 +180,37 @@ def qbc_source_split_upper(state,dim,t,qbc,auxbc,num_ghost):
         # Fix height individually
         qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
 
+def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,:num_ghost] = Bx_ghost[:num_ghost]
+
+def auxbc_bathymetry_upper(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,-num_ghost:] = Bx_ghost[-num_ghost:]
+
+def setaux(num_ghost,mx,xlower,dxc,maux,aux):
+    #    aux[0,i]  = bathymetry gradient
+
+    if "_aux" not in setaux.__dict__:
+        setaux._aux = np.empty(aux.shape)
+
+        setaux._aux[0,:] = Bx_ghost
+
+    aux[:,:] = np.copy(setaux._aux)
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
-    import shallow_roe_with_efix_split
 
-    solver = pyclaw.ClawSolver1D(shallow_roe_with_efix_split)
-    solver.step_source = step_source
+    if Solver == "UNBALANCED":
+        import shallow_roe_with_efix_unbalanced
+        riemann_solver = shallow_roe_with_efix_unbalanced
+    elif Solver == "LEVEQUE":
+        import shallow_roe_with_efix_leveque
+        riemann_solver = shallow_roe_with_efix_leveque
+
+    solver = pyclaw.ClawSolver1D(riemann_solver)
+
+    if Solver == "UNBALANCED":
+        solver.step_source = step_source
+
     solver.limiters = pyclaw.limiters.tvd.vanleer
     solver.num_waves = 3
     solver.num_eqn = 3
@@ -192,15 +222,40 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     solver.user_bc_lower = qbc_source_split_lower
     solver.user_bc_upper = qbc_source_split_upper
 
+    solver.aux_bc_lower[0] = pyclaw.BC.custom
+    solver.aux_bc_upper[0] = pyclaw.BC.custom
+    solver.user_aux_bc_lower = auxbc_bathymetry_lower
+    solver.user_aux_bc_upper = auxbc_bathymetry_upper
+
     xlower = -0.5
     xupper = 0.5
     mx = Resolution
+    num_ghost = 2
+
     x = pyclaw.Dimension('x',xlower,xupper,mx)
     domain = pyclaw.Domain(x)
-    num_eqn = 3
-    state = pyclaw.State(domain,num_eqn)
+    dx = domain.grid.delta[0]
 
-    init_topo(state, xlower, xupper)
+    num_eqn = 3
+
+    num_aux = {
+        "UNBALANCED": 0,
+        "LEVEQUE": 1,
+    }[Solver]
+    state = pyclaw.State(domain,num_eqn, num_aux)
+
+    init_topo(state, xlower, xupper, dx)
+
+    if num_aux > 0:
+        auxtmp = np.ndarray(shape=(num_aux,mx+2*num_ghost), dtype=float, order='F')
+        setaux(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        state.aux[:,:] = auxtmp[:,num_ghost:-num_ghost]
+
+    state.problem_data['grav'] = 1.0
+    state.problem_data['k'] = K
+    state.problem_data['u'] = U
+    state.problem_data['dx'] = dx
+
     qinit(state, xlower, xupper)
 
     claw = pyclaw.Controller()
@@ -238,6 +293,7 @@ def setplot(plotdata):
         "STEADY_FLOW": 1.7,
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
+    #plotaxes.ylimits = [0.99,1.02]
     plotaxes.title = 'Surface level'
     plotaxes.axescmd = 'subplot(211)'
 
