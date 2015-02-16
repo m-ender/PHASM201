@@ -2,9 +2,11 @@ LEVEQUE
 STEADY_FLOW
 COSINE
 100
+0
 10
 10
-0.2
+10
+2.0
 
 Only the first 7 lines of this file are read.
 The first line specifies the solver to be used and
@@ -44,7 +46,9 @@ of the following strings:
     CLIFF           B = (tanh(100x)+1)/4
 
 The fourth value is the number cells to use along x.
-The fifth value is the maximum time T of the simulation.
-The sixth value is the Kelvin number K for the simulation.
-The seventh value is the initial x-velocity of the domain.
+The fifth value is the first time T to be plotted.
+The sixth value is the maximum time T of the simulation.
+The seventh is the number of plots to produce.
+The eigth value is the Kelvin number K for the simulation.
+The ninth value is the initial x-velocity of the domain.
     This value is only used for the STEADY_FLOW model.

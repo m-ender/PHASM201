@@ -35,7 +35,9 @@ Resolution = 100
 Solver = ''
 Scenario = ''
 Bathymetry = ''
+T0 = 0.
 T = 10.
+NPlots = 10
 K = 10.
 U = 0.
 
@@ -49,7 +51,9 @@ with open('pyclaw.data') as config:
     Scenario = next(lines).upper()
     Bathymetry = next(lines).upper()
     Resolution = int(next(lines))
+    T0 = float(next(lines))
     T = float(next(lines))
+    NPlots = int(next(lines))
     K = float(next(lines))
     if Scenario == 'STEADY_FLOW':
         U = float(next(lines))
@@ -260,6 +264,8 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     claw = pyclaw.Controller()
     claw.keep_copy = True
+    claw.output_style = 2
+    claw.out_times = np.linspace(T0,T,NPlots+1)
     claw.tfinal = T
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
