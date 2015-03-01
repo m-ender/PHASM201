@@ -142,6 +142,14 @@ This did indeed solve the problem, such that now the domain settles into a stead
 
 With this in place, I was able to set up subcritical and supercritical flows both with and without rotation, as several qualitatively different transcritical solutions. I will now start to implement the first of the balanced-solvers.
 
+\subsubsection*{16 February 2015}
+
+Over the last few weeks, I have adapted the solver presented in \citet{leveque1998balancing} to include rotation (I've got handwritten workings on this, which I'll use for the final report), implemented it in Fortran and ran some tests on the model problems. The solver does work better than the unbalanced solver, but not as well as I expected. I'll have to look into whether there's a mistake in the code, or whether the results are actually correct.
+
+As LeVeque noted, the Newton solver fails on transcritical problems. Prof. Johnson suggested to try solving the cubic equation in question exactly. This implementation performs identically for subcritical and supercritical problems, but does indeed not break down for transcritical problems. However, the results in cases where the Newton solver fails don't seem reliable as they introduce a lot more (stationary) shocks than the unbalanced solver on a fine grid. For now, I'll write this off as a shortcoming of the method, but I might revisit this once I've implemented the other methods.
+
+Next I will try adapting the method presented in \citet{rogers2003mathematical} to our problems and implementing this solver next.
+
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
 \bibliography{../common/bibliography}
