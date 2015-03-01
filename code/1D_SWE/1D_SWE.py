@@ -116,6 +116,9 @@ def qinit(state,x_min,x_max):
         state.q[1,:] = h*u
         state.q[2,:] = 0 * xc
 
+    if Solver == 'ROGERS':
+        state.q[0,:] -= (1.0 - B)
+
 
 def init_topo(state,x_min,x_max,dx):
     xc = state.grid.c_centers_with_ghost(2)[0]
@@ -170,19 +173,60 @@ def step_source(solver,state,dt):
     q[1,:] = q[1,:] + dt * (hv * K - h * Bx)
     q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
 
+def step_source_rogers(solver,state,dt):
+    """
+    This computes the source term for the balanced method due to
+    Rogers et al. (2003). In particular, it computes the Coriolis
+    source term only based on the deviation from equilibrium.
+
+    Source terms are due to a rotating frame and variable bathymetry.
+    Integrated using a 2-stage, 2nd-order Runge-Kutta method.
+    This is a Clawpack-style source term routine, which approximates
+    the integral of the source terms over a step.
+    Note that q[0,:] = zeta is unaffected by the source term.
+    """
+    dt2 = dt/2.
+
+    q = state.q
+
+    z    = q[0,:]
+    hu   = q[1,:]
+    hv   = q[2,:]
+
+    h0 = state.aux[0,:]
+    h = h0 + z
+
+    u = hu / h
+    v = hv / h
+
+    qstar = np.empty(q.shape)
+
+    X = state.c_centers
+
+    v_balance = U * K
+
+    qstar[1,:] = q[1,:] + dt2 * (hv * K - u * u * Bx)
+    qstar[2,:] = q[2,:] - dt2 * (hu * K + u * v * Bx - h * v_balance)
+
+    hu   = qstar[1,:]
+    hv   = qstar[2,:]
+
+    q[1,:] = q[1,:] + dt * (hv * K - u * u * Bx)
+    q[2,:] = q[2,:] - dt * (hu * K + u * v * Bx - h * v_balance)
+
 
 def qbc_source_split_lower(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,i] = qbc[:,num_ghost]
         # Fix height individually
-        qbc[0,i] += B[num_ghost] - B[i]
+        #qbc[0,i] += B[num_ghost] - B[i]
 
 
 def qbc_source_split_upper(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,-1-i] = qbc[:,-1-num_ghost]
         # Fix height individually
-        qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
+        #qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
 
 def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,:num_ghost] = Bx_ghost[:num_ghost]
@@ -190,15 +234,31 @@ def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
 def auxbc_bathymetry_upper(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,-num_ghost:] = Bx_ghost[-num_ghost:]
 
-def setaux(num_ghost,mx,xlower,dxc,maux,aux):
+def auxbc_eql_depth_lower(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,:num_ghost] = 1 - B_ghost[:num_ghost]
+
+def auxbc_eql_depth_upper(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,-num_ghost:] = 1 - B_ghost[-num_ghost:]
+
+def setaux_bathymetry(num_ghost,mx,xlower,dxc,maux,aux):
     #    aux[0,i]  = bathymetry gradient
 
-    if "_aux" not in setaux.__dict__:
-        setaux._aux = np.empty(aux.shape)
+    if "_aux" not in setaux_bathymetry.__dict__:
+        setaux_bathymetry._aux = np.empty(aux.shape)
 
-        setaux._aux[0,:] = Bx_ghost
+        setaux_bathymetry._aux[0,:] = Bx_ghost
 
-    aux[:,:] = np.copy(setaux._aux)
+    aux[:,:] = np.copy(setaux_bathymetry._aux)
+
+def setaux_eql_depth(num_ghost,mx,xlower,dxc,maux,aux):
+    #    aux[0,i]  = equilibrium water depth
+
+    if "_aux" not in setaux_eql_depth.__dict__:
+        setaux_eql_depth._aux = np.empty(aux.shape)
+
+        setaux_eql_depth._aux[0,:] = (1.0 - B_ghost)
+
+    aux[:,:] = np.copy(setaux_eql_depth._aux)
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
@@ -209,11 +269,16 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     elif Solver == "LEVEQUE":
         import shallow_roe_with_efix_leveque
         riemann_solver = shallow_roe_with_efix_leveque
+    elif Solver == "ROGERS":
+        import shallow_roe_with_efix_rogers
+        riemann_solver = shallow_roe_with_efix_rogers
 
     solver = pyclaw.ClawSolver1D(riemann_solver)
 
     if Solver == "UNBALANCED":
         solver.step_source = step_source
+    if Solver == "ROGERS":
+        solver.step_source = step_source_rogers
 
     solver.limiters = pyclaw.limiters.tvd.vanleer
     solver.num_waves = 3
@@ -228,8 +293,12 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     solver.aux_bc_lower[0] = pyclaw.BC.custom
     solver.aux_bc_upper[0] = pyclaw.BC.custom
-    solver.user_aux_bc_lower = auxbc_bathymetry_lower
-    solver.user_aux_bc_upper = auxbc_bathymetry_upper
+    if Solver == 'LEVEQUE':
+        solver.user_aux_bc_lower = auxbc_bathymetry_lower
+        solver.user_aux_bc_upper = auxbc_bathymetry_upper
+    elif Solver == 'ROGERS':
+        solver.user_aux_bc_lower = auxbc_eql_depth_lower
+        solver.user_aux_bc_upper = auxbc_eql_depth_upper
 
     xlower = -0.5
     xupper = 0.5
@@ -245,6 +314,7 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     num_aux = {
         "UNBALANCED": 0,
         "LEVEQUE": 1,
+        "ROGERS": 1,
     }[Solver]
     state = pyclaw.State(domain,num_eqn, num_aux)
 
@@ -252,7 +322,10 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     if num_aux > 0:
         auxtmp = np.ndarray(shape=(num_aux,mx+2*num_ghost), dtype=float, order='F')
-        setaux(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        if Solver == "LEVEQUE":
+            setaux_bathymetry(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "ROGERS":
+            setaux_eql_depth(num_ghost,mx,xlower,dx,num_aux,auxtmp)
         state.aux[:,:] = auxtmp[:,num_ghost:-num_ghost]
 
     state.problem_data['grav'] = 1.0
@@ -305,7 +378,11 @@ def setplot(plotdata):
 
     # Set up for items on these axes:
     def surface_level(current_data):
-        h = current_data.q[0,:]
+        if Solver == 'ROGERS':
+            h = current_data.q[0,:] + 1 - B
+        else:
+            h = current_data.q[0,:]
+
         return h + B
     plotitem = plotaxes.new_plotitem(plot_type='1d')
     plotitem.plot_var = surface_level
@@ -329,7 +406,10 @@ def setplot(plotdata):
 
     # Set up for items on these axes:
     def potential_vorticity(current_data):
-        h = current_data.q[0,:]
+        if Solver == 'ROGERS':
+            h = current_data.q[0,:] + 1 - B
+        else:
+            h = current_data.q[0,:]
         hu = current_data.q[1,:]
         hv = current_data.q[2,:]
 

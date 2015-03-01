@@ -1,12 +1,12 @@
-LEVEQUE
+ROGERS
 STEADY_FLOW
-COSINE
+SLOPE
 100
 0
+1
 10
 10
-10
-2.0
+1.0
 
 Only the first 7 lines of this file are read.
 The first line specifies the solver to be used and
@@ -18,6 +18,9 @@ can be one of the following strings:
     LEVEQUE         Uses the balanced solver from
                     LeVeque (1998), introducing new
                     discontinuities at the cell centres.
+    ROGERS          Uses the balanced solver from
+                    Rogers (2013), applying a change of
+                    variables in the equilibrium frame.
 
 The second line specifies the test model to be set up
 and can be one of the following strings:
