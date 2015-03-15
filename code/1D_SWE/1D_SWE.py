@@ -495,7 +495,7 @@ def setplot(plotdata):
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Figure for Surface Level and Potential Vorticity
-    plotfigure = plotdata.new_plotfigure(name='Surface level', figno=0)
+    plotfigure = plotdata.new_plotfigure(name='Unbalanced solver', figno=0)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
@@ -510,7 +510,7 @@ def setplot(plotdata):
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
     plotaxes.ylimits = [0.95,1.05]
-    plotaxes.title = 'Surface level'
+    plotaxes.title = 'Unbalanced solver'
     #plotaxes.axescmd = 'subplot(211)'
 
     # Set up for items on these axes:
