@@ -3,25 +3,26 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
 ! =========================================================
 
 ! Solve Riemann problems for the non-dimensionalised x-split 2D
-! shallow water equations with source terms:
-!   (h)_t + (u h)_x = 0
-!   (uh)_t + ( uuh + .5*h^2 )_x = Khv - hB_x
-!   (vh)_t + (uvh)_x = -Khu + KhU
+! shallow water equations
+!   (z)_t + (u h)_x = 0
+!   (uh)_t + ( uuh + .5*(z^2 + 2*z*h_0) )_x = 0
+!   (n)_t + (uvh)_x = 0
 ! using Roe's approximate Riemann solver with entropy fix for
 ! transonic rarefractions.
 
-! This is a modified solver, which solves the source terms in
-! a balanced manner, following LeVeque (1998) "Balancing Source
-! Terms and Flux Gradients in High-Resolution Godunov Methods:
-! The Quasi-Steady Wave-Propagation Algorithm".
+! Note that this is a modified solver, which solves the uses the
+! deviation from geostrophic equilibrium. This is following a
+! method proposed by Rogers et al. (2003) in "Mathematical
+! balancing of flux gradient and source terms prior to using
+! Roe's approximate Riemann solver".
 
 ! waves: 3
 ! equations: 3
 
 ! Conserved quantities:
-!       1 depth
+!       1 water-level deviation
 !       2 x-momentum
-!       3 y-momentum
+!       3 y-momentum deviation
 
 ! This function solves the Riemann problem at all interfaces in one call
 
@@ -45,123 +46,34 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     dimension wave(meqn,   mwaves, 1-mbc:maxmx+mbc)
     dimension amdq(meqn,           1-mbc:maxmx+mbc)
     dimension apdq(meqn,           1-mbc:maxmx+mbc)
-    dimension auxl(1,              1-mbc:maxmx+mbc)
-    dimension auxr(1,              1-mbc:maxmx+mbc)
+    dimension auxl(2,              1-mbc:maxmx+mbc)
+    dimension auxr(2,              1-mbc:maxmx+mbc)
 
 !     # Local storage
 !     ---------------
     dimension delta(3)
-    logical :: efix, newton
+    logical :: efix
+
+    dimension hl(1-mbc:maxmx+mbc)
+    dimension hr(1-mbc:maxmx+mbc)
+
+    dimension hvl(1-mbc:maxmx+mbc)
+    dimension hvr(1-mbc:maxmx+mbc)
 
     data efix /.true./    !# Use entropy fix for transonic rarefactions
-    data newton /.false./ !# Use Newton-Raphson to find cubic roots
 
-    common /cparam/ grav, K, U, dx
+    hr = auxr(1,:) + qr(1,:)
+    hl = auxl(1,:) + ql(1,:)
 
-!   # Arrays for cell halves
-    dimension hl(1-mbc:maxmx+mbc), hr(1-mbc:maxmx+mbc)
-    dimension hvl(1-mbc:maxmx+mbc), hvr(1-mbc:maxmx+mbc)
+    hvr = auxr(2,:) + qr(3,:)
+    hvl = auxl(2,:) + ql(3,:)
 
-    complex*16 :: CC, u1, u2, u3, x1, x2, x3
-
-    do 10 i=1-mbc,mx+mbc
-        h  = ql(1,i)
-        hu = ql(2,i)
-        hv = ql(3,i)
-        DB = auxl(1,i)
-
-        if (newton) then
-    !       # delta h for the case hu=0:
-            delh = 0.5d0*(-DB + K*hv/h)*dx
-
-    !       # Newton iteration to improve delh:
-            do 5 iter=1,5
-                hp = ql(1,i) + delh
-                hm = ql(1,i) - delh
-                F = hu*hu*(1.d0/hp - 1.d0/hm) + 2.0d0 * delh * ql(1,i) + (h*DB - K*hv)*dx
-                Fprime = -hu*hu*(1.d0/hp**2 + 1.d0/hm**2) + 2.0d0 * ql(1,i)
-                dnewton = F/Fprime
-                delh = delh - dnewton
-                if (dabs(dnewton).lt.1d-6) go to 8
-            5 continue
-
-            write(6,*) 'nonconvergence of newton in rp1swt'
-            write(6,*) '   dnewton =',dnewton
-
-            8 continue
-
-        else
-
-    !       # delta h for the case hu=0:
-            if (dabs(hu) < 1d-10) then
-                delh = 0.5d0*(-DB + K*hv/h)*dx
-            else
-                a = - 2 * h
-                b = (- h * DB + K*hv)*dx
-                c = 2*(h**3 - hu**2)
-                d = -h*h*b
-
-                !write(6,*) '    h            =', h
-                !write(6,*) '    (a, b, c, d) =', a, b, c, d
-
-                Del = 18*a*b*c*d - 4*b*b*b*d + b*b*c*c - 4*a*c*c*c - 27*a*a*d*d
-                Del0 = b*b - 3*a*c
-                Del1 = 2*b*b*b - 9*a*b*c + 27*a*a*d
-                CC = ((Del1 + sqrt(cmplx(-27*a*a*Del,0,8)))/2)**(1.0d0/3.0d0)
-                u1 = 1
-                u2 = complex(-1.d0/2.d0, sqrt(3.d0)/2.d0)
-                u3 = complex(-1.d0/2.d0, -sqrt(3.d0)/2.d0)
-
-                x1 = -1/(3*a) * (b + u1*CC + Del0/(u1*CC))
-                x2 = -1/(3*a) * (b + u2*CC + Del0/(u2*CC))
-                x3 = -1/(3*a) * (b + u3*CC + Del0/(u3*CC))
-
-                if (Del > 0) then
-                    ! Discriminant greater 0, three real roots
-                    ax1 = dabs(real(x1))
-                    ax2 = dabs(real(x2))
-                    ax3 = dabs(real(x3))
-                    if (ax1 <= ax2 .AND. ax1 <= ax3) then
-                        delh = real(x1)
-                    else if (ax2 <= ax1 .AND. ax2 <= ax3) then
-                        delh = real(x2)
-                    else
-                        delh = real(x3)
-                    endif
-                else
-                    ! Only one real root. Need to find the right one.
-                    if (dabs(real(x1)/aimag(x1)) > 10) then
-                        delh = real(x1)
-                    else if (dabs(real(x2)/aimag(x2)) > 10) then
-                        delh = real(x2)
-                    else
-                        delh = real(x3)
-                    endif
-                endif
-
-                !write(6,*) '    delh           =', delh
-            endif
-        endif
-
-        hl(i) = ql(1,i) - delh
-        hr(i) = ql(1,i) + delh
-
-        if (U == 0.d0) then
-            delhv = 0.5d0*K*(-1/h)*dx*(h*h - delh*delh) + hv*delh/h
-        else
-            delhv = 0.5d0*K*(U/hu - 1/h)*dx*(h*h - delh*delh) + hv*delh/h
-        endif
-
-        hvl(i) = ql(3,i) - delhv
-        hvr(i) = ql(3,i) + delhv
-    10 continue
+    !write(6,*) '    auxr =', auxr(1,:)
+    !write(6,*) '    qr =', qr(1,:)
+    !write(6,*) '    hr =', hr
 
 !     # Main loop of the Riemann solver.
     do 30 i=2-mbc,mx+mbc
-
-    !    write(6,*) '   i =',i
-    !    write(6,*) '   hl =',hr(i-1)
-    !    write(6,*) '   hr =',hl(i)
 
     !     # compute  Roe-averaged quantities:
         hsqrtl = dsqrt(hr(i-1))
@@ -171,10 +83,10 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
         vbar = (hvr(i-1)/hsqrtl + hvl(i)/hsqrtr) / hsq2
         cbar=dsqrt(0.5d0*(hr(i-1) + hl(i)))
 
-    !     # delta(1)=h(i)-h(i-1), delta(2)=hu(i)-hu(i-1), delta(3)=hv(i)-hv(i-1)
-        delta(1) = hl(i) - hr(i-1)
+    !     # delta(1)=z(i)-z(i-1), delta(2)=hu(i)-hu(i-1), delta(3)=hv(i)-hv(i-1)
+        delta(1) = ql(1,i) - qr(1,i-1)
         delta(2) = ql(2,i) - qr(2,i-1)
-        delta(3) = hvl(i) - hvr(i-1)
+        delta(3) = ql(3,i) - qr(3,i-1)
 
     !     # Compute coeffs in the vector expansion of delta(1),delta(2)
         a1 = 0.5d0*(-delta(2) + (ubar + cbar) * delta(1))/cbar
@@ -197,9 +109,6 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
         wave(3,3,i) = a3*vbar
         s(3,i) = ubar + cbar
 
-    !    write(6,*) '   s1 =',s(1,i)
-    !    write(6,*) '   s2 =',s(2,i)
-    !    write(6,*) '   s3 =',s(3,i)
     30 END DO
 
 !     # Compute Godunov flux f0:

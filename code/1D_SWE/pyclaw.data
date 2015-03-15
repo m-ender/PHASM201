@@ -1,12 +1,12 @@
-ROGERS
-STEADY_FLOW
-SLOPE
+UNBALANCED
+STILL_LAKE
+COSINE
 100
 0
-1
+2
+20
 10
-10
-1.0
+2.0
 
 Only the first 7 lines of this file are read.
 The first line specifies the solver to be used and
@@ -19,8 +19,11 @@ can be one of the following strings:
                     LeVeque (1998), introducing new
                     discontinuities at the cell centres.
     ROGERS          Uses the balanced solver from
-                    Rogers (2013), applying a change of
-                    variables in the equilibrium frame.
+                    Rogers (2013), using deviations from
+                    still water as variables.
+    ROGERS_GEO      Uses the balanced solver from
+                    Rogers (2013), using deviations from
+                    geostrophic equilibrium as variables.
 
 The second line specifies the test model to be set up
 and can be one of the following strings:
@@ -28,8 +31,10 @@ and can be one of the following strings:
     STILL_LAKE      Flat surface, no momentum.
     WAVE            A wave in a single characteristic.
     ROSSBY          A Rossby adjustment problem.
-    GEOSTROPHIC     A Gausssian hump of water in
+    GEOSTROPHIC     A Gaussian hump of water in
                     geostrophic equilibrium.
+    GEO_WAVE        Superposition of the GEOSTROPHIC and
+                    WAVE models.
     STEADY_FLOW     Uniform flow at a specified velocity.
                     A transversal pressure gradient will
                     be imposed to prevent tilting of the
