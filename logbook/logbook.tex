@@ -13,15 +13,10 @@
 \usepackage[greek,english]{babel}
 \usepackage{amsmath}
 
+\usepackage{physics}
+
 \frenchspacing
 %\renewcommand{\thefootnote}{\alph{footnote}}
-
-\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
-\newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
-% Different command for lower-case greek letters as they need a different command for bold letters.
-\newcommand{\gvec}[1]{\ensuremath{\boldsymbol{#1}}}
-\newcommand{\guvec}[1]{\ensuremath{\gvec{\hat{#1}}}}
-\newcommand{\dif}{\mathrm{d}}
 
 \begingroup
 \lccode`\~=`\ %
@@ -149,6 +144,34 @@ Over the last few weeks, I have adapted the solver presented in \citet{leveque19
 As LeVeque noted, the Newton solver fails on transcritical problems. Prof. Johnson suggested to try solving the cubic equation in question exactly. This implementation performs identically for subcritical and supercritical problems, but does indeed not break down for transcritical problems. However, the results in cases where the Newton solver fails don't seem reliable as they introduce a lot more (stationary) shocks than the unbalanced solver on a fine grid. For now, I'll write this off as a shortcoming of the method, but I might revisit this once I've implemented the other methods.
 
 Next I will try adapting the method presented in \citet{rogers2003mathematical} to our problems and implementing this solver next.
+
+\subsubsection*{22 February 2015}
+
+I've looked into the method presented by Rogers. It is essentially just a change of variables such that the variables in use are perturbations about equilibrium. However, the derivation in the paper assumes a flux differencing method, whereas Clawpack implements a wave-propagation method.
+
+I tried naively applying their results to the wave-propagation method, but the solver did not work correctly in the presence of non-uniform bathymetry. Next, I tried going through a similar derivation as theirs, but I wasn't quite able to follow their argument for (3.13), since $\vb{f'}$ doesn't seem to be a function of only $\vb{q'}$ (which I think is necessary for (3.10)). I've scheduled an additional meeting with Prof. Johnson for tomorrow to go through this together. In the meantime I'll start putting together an outline for the final report.
+
+\subsubsection*{24 February 2015}
+
+We were not able to resolve the discrepancies I found in the Rogers paper yesterday. Instead, I worked through the derivation from scratch and ended up with two additional source terms. Using these in the numerical method actually seems to give a correct method (the qualitative result is the same, and as I increase the resolution the solutions of this method and the unbalanced method converge, but that \tilde100 cells there are noticeable differences). I have written up my alternative derivation, in case I'll need to use it in the final report, and I've decided to email the corresponding author Prof. Borthwick about this. Maybe I've overlooked something and he can clear up the issue.
+
+\subsubsection*{1 March 2015}
+
+Prof. Borthwick replied but didn't have time to actually look into it. He forwarded my request to Ben Rogers though (another author of said paper). In the meantime, I have fixed a bug with the boundary conditions of my implementation. I tested it on a variety of scenarios, and I'm fairly sure now that it works correctly, but it less accurate the unbalanced method --- that is, it does preserve equilibria perfectly, but away from equilibrium for small resolutions it is further off from the exact solution than the unbalanced or LeVeque methods.
+
+\subsubsection*{7 March 2015}
+
+Ben Rogers replied as well, but also won't be able to look into it detail before next week. In the meantime, I've looked into the other two methods again which I originally wanted to implement. Both of them seem to be based on unsplit methods, which combine the flux terms and source term into a single value which is then used to integrate the conservation variables in time using Runge--Kutta or a similar method. Instead, I decided to focus on the methods I have, trying to make at least one of them work for (nontrivial) geostrophic equilibria.
+
+I've derived the necessary terms to apply the Rogers solver to geostrophic equilibria (using my alternative derivation for now). I will try to implement this and then start work on the formal report.
+
+I've also noticed something odd with the still-water Rogers solver: in steady flow models, I'm using a source term to balance the Coriolis force due to the background flow $hKU$. When implementing the method, I kept this source term, although technically I think I should subtract off the equilibrium force which would reduce the source term to $\zeta KU$. However, when I try this, the method stops working. I need to sort out why that is. I have a hunch that this is due to conflicting assumptions of a) the still water state and b) the steady flow state which causes this term to appear.
+
+\subsubsection*{14 March 2015}
+
+Still no reply from Rogers and Borthwick.
+
+While working on the presentation, I have noticed a discrepancy between the LeVeque paper and my implementation, which may be the reason why my implementation isn't perfectly well-balanced: LeVeque uses bathymetry specified at cell boundaries, and computes the initial water depth based on the average bathymetry in that cell. This leads to adjacent $h^+$ and $h^-$ values being identical. I think using bathymetry specified at the cell centres may not simply not work for this method.
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}

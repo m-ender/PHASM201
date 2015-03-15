@@ -3,6 +3,9 @@
 % Use for onecolumn layout
 \usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
 
+\usepackage{setspace}
+\onehalfspace
+
 \usepackage{graphicx}
 
 \usepackage[utf8]{inputenc}
@@ -13,15 +16,10 @@
 \usepackage[greek,english]{babel}
 \usepackage{amsmath}
 
+\usepackage{physics}
+
 \frenchspacing
 %\renewcommand{\thefootnote}{\alph{footnote}}
-
-\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
-\newcommand{\uvec}[1]{\ensuremath{\vec{\hat{#1}}}}
-% Different command for lower-case greek letters as they need a different command for bold letters.
-\newcommand{\gvec}[1]{\ensuremath{\boldsymbol{#1}}}
-\newcommand{\guvec}[1]{\ensuremath{\gvec{\hat{#1}}}}
-\newcommand{\dif}{\mathrm{d}}
 
 \begingroup
 \lccode`\~=`\ %
@@ -37,15 +35,24 @@
   \end{flushright}%
 }
 
-\title{Accurate methods for computing rotation-dominated flows}
+\title{Accurate methods for computing rotation-dominated flows }
 
-\author{Martin Büttner, University College London}
+\author{Martin Büttner, University College London \\ MSci Theoretical Physics \\ \\ Supervisor: Prof. Edward Johnson}
 \date{\today}
 
 \begin{document}
 
 \maketitle
 
+\include{content/abstract}
+
+\tableofcontents
+
+\include{content/ch_introduction}
+\include{content/ch_theory}
+\include{content/ch_implementation}
+\include{content/ch_results}
+\include{content/ch_conclusion}
 
 
 \addcontentsline{toc}{chapter}{Bibliography}
