@@ -66,7 +66,7 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
         delta(2) = ql(2,i) - qr(2,i-1)
         delta(3) = ql(3,i) - qr(3,i-1)
 
-    !     # Compute coeffs in the evector expansion of delta(1),delta(2)
+    !     # Compute coeffs in the vector expansion of delta(1),delta(2)
         a1 = 0.5d0*(-delta(2) + (ubar + cbar) * delta(1))/cbar
         a2 = -vbar * delta(1) + delta(3)
         a3 = 0.5d0*( delta(2) - (ubar - cbar) * delta(1))/cbar

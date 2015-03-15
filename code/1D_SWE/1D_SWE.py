@@ -65,23 +65,53 @@ Bx = np.zeros(Resolution)
 B_ghost = np.zeros(Resolution+4)
 Bx_ghost = np.zeros(Resolution+4)
 
-def qinit(state,x_min,x_max):
+hs = np.zeros(Resolution)
+hsx = np.zeros(Resolution)
+
+hv0 = np.zeros(Resolution)
+hv0x = np.zeros(Resolution)
+
+hs_ghost = np.zeros(Resolution+4)
+hsx_ghost = np.zeros(Resolution+4)
+
+hv0_ghost = np.zeros(Resolution+4)
+hv0x_ghost = np.zeros(Resolution+4)
+
+def qinit(state,x_min,x_max,dx):
+    global hs, hsx, hv0, hv0x, hs_ghost, hsx_ghost, hv0_ghost, hv0x_ghost
+
+    xc_ghost = state.grid.c_centers_with_ghost(2)[0]
     xc = state.grid.x.centers
 
     if Scenario == 'STILL_LAKE':
-        state.q[0,:] = 0 * xc + 1.0 - B
+        hs_ghost = 0*xc_ghost + 1.0
+        hs = 0*xc + 1.0
+        hv0_ghost = 0*xc_ghost
+        hv0 = 0*xc
+
+        state.q[0,:] = hs - B
         # x-momentum
         state.q[1,:] = 0 * xc
         # y-momentum
-        state.q[2,:] = 0 * xc
+        state.q[2,:] = hv0
 
     elif Scenario == 'WAVE':
-        h = 1 + 0.2 * (xc > -0.4) * (xc < -0.3)
+        hs_ghost = 0*xc_ghost + 1.0
+        hs = 0*xc + 1.0
+        h = hs + 0.05 * (xc > -0.4) * (xc < -0.3)
+        hv0_ghost = 0*xc_ghost
+        hv0 = 0*xc
+
         state.q[0,:] = h - B
         state.q[1,:] = 0 * xc
-        state.q[2,:] = 0 * xc
+        state.q[2,:] = hv0
 
     elif Scenario == 'ROSSBY':
+        hs_ghost = 0*xc_ghost + 1.0
+        hs = 0*xc + 1.0
+        hv0_ghost = 0*xc_ghost
+        hv0 = 0*xc
+
         x0 = 0.
 
         # Edge state
@@ -102,19 +132,51 @@ def qinit(state,x_min,x_max):
         state.q[2,:] = hl*vl + (hr*vr-hl*vl) * (xc > -0.2) * (xc < 0.2)
 
     elif Scenario == 'GEOSTROPHIC':
-        h = 1.0 + 0.5*np.exp(-128*xc*xc) - B
-        hx = np.gradient(h, 1./Resolution)
-        state.q[0,:] = h
+        hs_ghost = 1.0 + 0.5*np.exp(-128*xc_ghost*xc_ghost)
+        hsx_ghost = np.gradient(hs_ghost, dx)
+
+        hv0_ghost = hsx_ghost*(hs_ghost - B_ghost) / K
+
+        state.q[0,:] = hs_ghost[2:-2] - B
         state.q[1,:] = 0 * xc
-        state.q[2,:] = h*(hx + Bx) / K
+        state.q[2,:] = hv0_ghost[2:-2]
+
+    elif Scenario == 'GEO_WAVE':
+        hs_ghost = 1.0 + 0.5*np.exp(-128*xc_ghost*xc_ghost)
+        hsx_ghost = np.gradient(hs_ghost, dx)
+
+        hv0_ghost = hsx_ghost*(hs_ghost - B_ghost) / K
+
+        state.q[0,:] = hs_ghost[2:-2] - B + 0.05 * (xc > -0.4) * (xc < -0.3)
+        state.q[1,:] = 0 * xc
+        state.q[2,:] = hv0_ghost[2:-2]
 
     elif Scenario == 'STEADY_FLOW':
-        h = 1.0 - B
+        hs_ghost = 0*xc_ghost + 1.0
+        hs = 0*xc + 1.0
+        h = hs - B
         u = U
+        hv0_ghost = 0*xc_ghost
+        hv0 = 0*xc
 
         state.q[0,:] = h
         state.q[1,:] = h*u
-        state.q[2,:] = 0 * xc
+        state.q[2,:] = hv0
+
+    if Solver == 'ROGERS':
+        hs_ghost = 0*xc + 1.0
+        state.q[0,:] -= (1.0 - B)
+    elif Solver == 'ROGERS_GEO':
+        state.q[0,:] -= (hs_ghost[2:-2] - B)
+        state.q[2,:] -= hv0_ghost[2:-2]
+
+    hsx_ghost = np.gradient(hs_ghost, dx)
+    hv0x_ghost = np.gradient(hv0_ghost, dx)
+
+    hs = hs_ghost[2:-2]
+    hsx = hsx_ghost[2:-2]
+    hv0 = hv0_ghost[2:-2]
+    hv0x = hv0x_ghost[2:-2]
 
 
 def init_topo(state,x_min,x_max,dx):
@@ -135,6 +197,7 @@ def init_topo(state,x_min,x_max,dx):
         B_ghost = 2.0 * xc*xc
     elif Bathymetry == 'CLIFF':
         B_ghost = (np.tanh(100*xc)+1)/4
+
     Bx_ghost = np.gradient(B_ghost, dx)
     B = B_ghost[2:-2]
     Bx = Bx_ghost[2:-2]
@@ -170,19 +233,105 @@ def step_source(solver,state,dt):
     q[1,:] = q[1,:] + dt * (hv * K - h * Bx)
     q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
 
+def step_source_rogers(solver,state,dt):
+    """
+    This computes the source term for the balanced method due to
+    Rogers et al. (2003). In particular, it computes the Coriolis
+    source term only based on the deviation from equilibrium.
+
+    Source terms are due to a rotating frame and variable bathymetry.
+    Integrated using a 2-stage, 2nd-order Runge-Kutta method.
+    This is a Clawpack-style source term routine, which approximates
+    the integral of the source terms over a step.
+    Note that q[0,:] = zeta is unaffected by the source term.
+    """
+    dt2 = dt/2.
+
+    q = state.q
+
+    z    = q[0,:]
+    hu   = q[1,:]
+    hv   = q[2,:]
+
+    h0 = state.aux[0,:]
+    h = h0 + z
+
+    u = hu / h
+    v = hv / h
+
+    qstar = np.empty(q.shape)
+
+    X = state.c_centers
+
+    v_balance = U * K
+
+    qstar[1,:] = q[1,:] + dt2 * (hv * K - u * u * Bx)
+    qstar[2,:] = q[2,:] - dt2 * (hu * K + u * v * Bx - h * v_balance)
+
+    hu   = qstar[1,:]
+    hv   = qstar[2,:]
+
+    q[1,:] = q[1,:] + dt * (hv * K - u * u * Bx)
+    q[2,:] = q[2,:] - dt * (hu * K + u * v * Bx - h * v_balance)
+
+def step_source_rogers_geo(solver,state,dt):
+    """
+    This computes the source term for the balanced method due to
+    Rogers et al. (2003). In particular, it computes the Coriolis
+    source term only based on the deviation from a geostrophic
+    equilibrium.
+
+    Source terms are due to a rotating frame and variable bathymetry.
+    Integrated using a 2-stage, 2nd-order Runge-Kutta method.
+    This is a Clawpack-style source term routine, which approximates
+    the integral of the source terms over a step.
+    Note that q[0,:] = zeta is unaffected by the source term.
+    """
+    dt2 = dt/2.
+
+    q = state.q
+
+    z    = q[0,:]
+    hu   = q[1,:]
+    n    = q[2,:]
+
+    h0 = state.aux[0,:]
+    h = h0 + z
+
+    hv0 = state.aux[1,:]
+    hv = hv0 + n
+
+    u = hu / h
+    v = hv / h
+
+    qstar = np.empty(q.shape)
+
+    X = state.c_centers
+
+    v_balance = U * K
+
+    qstar[1,:] = q[1,:] + dt2 * (n * K + u * u * (hsx - Bx) - z * hsx)
+    qstar[2,:] = q[2,:] - dt2 * (hu * K - u * v * (hsx - Bx) + hv0x * u - h * v_balance)
+
+    hu   = qstar[1,:]
+    hv   = qstar[2,:]
+
+    q[1,:] = q[1,:] + dt * (n * K + u * u * (hsx - Bx) - z * hsx)
+    q[2,:] = q[2,:] - dt * (hu * K - u * v * (hsx - Bx) + hv0x * u - h * v_balance)
+
 
 def qbc_source_split_lower(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,i] = qbc[:,num_ghost]
         # Fix height individually
-        qbc[0,i] += B[num_ghost] - B[i]
+        #qbc[0,i] += B[num_ghost] - B[i]
 
 
 def qbc_source_split_upper(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,-1-i] = qbc[:,-1-num_ghost]
         # Fix height individually
-        qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
+        #qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
 
 def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,:num_ghost] = Bx_ghost[:num_ghost]
@@ -190,15 +339,51 @@ def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
 def auxbc_bathymetry_upper(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,-num_ghost:] = Bx_ghost[-num_ghost:]
 
-def setaux(num_ghost,mx,xlower,dxc,maux,aux):
+def auxbc_eql_depth_lower(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,:num_ghost] = 1 - B_ghost[:num_ghost]
+
+def auxbc_eql_depth_upper(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,-num_ghost:] = 1 - B_ghost[-num_ghost:]
+
+def auxbc_eql_geo_lower(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,:num_ghost] = hs_ghost[:num_ghost] - B_ghost[:num_ghost]
+    auxbc[0,:num_ghost] = hv0_ghost[:num_ghost]
+
+def auxbc_eql_geo_upper(state,dim,t,qbc,auxbc,num_ghost):
+    auxbc[0,-num_ghost:] = hs_ghost[-num_ghost:] - B_ghost[-num_ghost:]
+    auxbc[0,-num_ghost:] = hv0_ghost[-num_ghost:]
+
+def setaux_bathymetry(num_ghost,mx,xlower,dxc,maux,aux):
     #    aux[0,i]  = bathymetry gradient
 
-    if "_aux" not in setaux.__dict__:
-        setaux._aux = np.empty(aux.shape)
+    if "_aux" not in setaux_bathymetry.__dict__:
+        setaux_bathymetry._aux = np.empty(aux.shape)
 
-        setaux._aux[0,:] = Bx_ghost
+        setaux_bathymetry._aux[0,:] = Bx_ghost
 
-    aux[:,:] = np.copy(setaux._aux)
+    aux[:,:] = np.copy(setaux_bathymetry._aux)
+
+def setaux_eql_depth(num_ghost,mx,xlower,dxc,maux,aux):
+    #    aux[0,i]  = equilibrium water depth
+
+    if "_aux" not in setaux_eql_depth.__dict__:
+        setaux_eql_depth._aux = np.empty(aux.shape)
+
+        setaux_eql_depth._aux[0,:] = (1.0 - B_ghost)
+
+    aux[:,:] = np.copy(setaux_eql_depth._aux)
+
+def setaux_eql_geo(num_ghost,mx,xlower,dxc,maux,aux):
+    #    aux[0,i]  = equilibrium water depth
+    #    aux[1,i]  = equilibrium y-momentum
+
+    if "_aux" not in setaux_eql_geo.__dict__:
+        setaux_eql_geo._aux = np.empty(aux.shape)
+
+        setaux_eql_geo._aux[0,:] = (hs_ghost - B_ghost)
+        setaux_eql_geo._aux[1,:] = hv0_ghost
+
+    aux[:,:] = np.copy(setaux_eql_geo._aux)
 
 def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_type='classic'):
     from clawpack import pyclaw
@@ -209,11 +394,21 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     elif Solver == "LEVEQUE":
         import shallow_roe_with_efix_leveque
         riemann_solver = shallow_roe_with_efix_leveque
+    elif Solver == "ROGERS":
+        import shallow_roe_with_efix_rogers
+        riemann_solver = shallow_roe_with_efix_rogers
+    elif Solver == "ROGERS_GEO":
+        import shallow_roe_with_efix_rogers_geo
+        riemann_solver = shallow_roe_with_efix_rogers_geo
 
     solver = pyclaw.ClawSolver1D(riemann_solver)
 
     if Solver == "UNBALANCED":
         solver.step_source = step_source
+    if Solver == "ROGERS":
+        solver.step_source = step_source_rogers
+    if Solver == "ROGERS_GEO":
+        solver.step_source = step_source_rogers_geo
 
     solver.limiters = pyclaw.limiters.tvd.vanleer
     solver.num_waves = 3
@@ -228,8 +423,15 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     solver.aux_bc_lower[0] = pyclaw.BC.custom
     solver.aux_bc_upper[0] = pyclaw.BC.custom
-    solver.user_aux_bc_lower = auxbc_bathymetry_lower
-    solver.user_aux_bc_upper = auxbc_bathymetry_upper
+    if Solver == 'LEVEQUE':
+        solver.user_aux_bc_lower = auxbc_bathymetry_lower
+        solver.user_aux_bc_upper = auxbc_bathymetry_upper
+    elif Solver == 'ROGERS':
+        solver.user_aux_bc_lower = auxbc_eql_depth_lower
+        solver.user_aux_bc_upper = auxbc_eql_depth_upper
+    elif Solver == 'ROGERS_GEO':
+        solver.user_aux_bc_lower = auxbc_eql_geo_lower
+        solver.user_aux_bc_upper = auxbc_eql_geo_upper
 
     xlower = -0.5
     xupper = 0.5
@@ -245,6 +447,8 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     num_aux = {
         "UNBALANCED": 0,
         "LEVEQUE": 1,
+        "ROGERS": 1,
+        "ROGERS_GEO": 2,
     }[Solver]
     state = pyclaw.State(domain,num_eqn, num_aux)
 
@@ -252,7 +456,12 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     if num_aux > 0:
         auxtmp = np.ndarray(shape=(num_aux,mx+2*num_ghost), dtype=float, order='F')
-        setaux(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        if Solver == "LEVEQUE":
+            setaux_bathymetry(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "ROGERS":
+            setaux_eql_depth(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "ROGERS_GEO":
+            setaux_eql_geo(num_ghost,mx,xlower,dx,num_aux,auxtmp)
         state.aux[:,:] = auxtmp[:,num_ghost:-num_ghost]
 
     state.problem_data['grav'] = 1.0
@@ -260,7 +469,7 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     state.problem_data['u'] = U
     state.problem_data['dx'] = dx
 
-    qinit(state, xlower, xupper)
+    qinit(state, xlower, xupper, dx)
 
     claw = pyclaw.Controller()
     claw.keep_copy = True
@@ -286,7 +495,7 @@ def setplot(plotdata):
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Figure for Surface Level and Potential Vorticity
-    plotfigure = plotdata.new_plotfigure(name='Surface level and PV', figno=0)
+    plotfigure = plotdata.new_plotfigure(name='Surface level', figno=0)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
@@ -296,16 +505,23 @@ def setplot(plotdata):
         "WAVE": 1.2,
         "ROSSBY": 3.5,
         "GEOSTROPHIC": 1.7,
+        "GEO_WAVE": 1.7,
         "STEADY_FLOW": 1.7,
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
-    #plotaxes.ylimits = [0.99,1.02]
+    plotaxes.ylimits = [0.95,1.05]
     plotaxes.title = 'Surface level'
-    plotaxes.axescmd = 'subplot(211)'
+    #plotaxes.axescmd = 'subplot(211)'
 
     # Set up for items on these axes:
     def surface_level(current_data):
-        h = current_data.q[0,:]
+        if Solver == 'ROGERS':
+            h = current_data.q[0,:] + 1 - B
+        elif Solver == 'ROGERS_GEO':
+            h = current_data.q[0,:] + hs - B
+        else:
+            h = current_data.q[0,:]
+
         return h + B
     plotitem = plotaxes.new_plotitem(plot_type='1d')
     plotitem.plot_var = surface_level
@@ -321,58 +537,76 @@ def setplot(plotdata):
     plotitem.color = 'g'
     plotitem.kwargs = {'linewidth':3}
 
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = [-0.5,0.5]
-    plotaxes.title = 'Potential vorticity'
-    plotaxes.axescmd = 'subplot(212)'
+    # plotfigure = plotdata.new_plotfigure(name='Potential vorticity', figno=1)
+    # # Set up for axes in this figure:
+    # plotaxes = plotfigure.new_plotaxes()
+    # plotaxes.xlimits = [-0.5,0.5]
+    # plotaxes.title = 'Potential vorticity'
+    # #plotaxes.axescmd = 'subplot(212)'
 
-    # Set up for items on these axes:
-    def potential_vorticity(current_data):
-        h = current_data.q[0,:]
-        hu = current_data.q[1,:]
-        hv = current_data.q[2,:]
+    # # Set up for items on these axes:
+    # def potential_vorticity(current_data):
+    #     if Solver == 'ROGERS':
+    #         h = current_data.q[0,:] + 1 - B
+    #     elif Solver == 'ROGERS_GEO':
+    #         h = current_data.q[0,:] + hs - B
+    #     else:
+    #         h = current_data.q[0,:]
+    #     hu = current_data.q[1,:]
+    #     if Solver == 'ROGERS_GEO':
+    #         hv = current_data.q[2,:] + hv0
+    #     else:
+    #         hv = current_data.q[2,:]
 
-        vx = np.gradient(hv/h, 1./Resolution)
+    #     vx = np.gradient(hv/h, 1./Resolution)
 
-        pv = (vx + K) / h
+    #     pv = (vx + K) / h
 
-        return pv
+    #     return pv
 
-    plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = potential_vorticity
-    plotitem.plotstyle = '-'
-    plotitem.color = 'b'
-    plotitem.kwargs = {'linewidth':3}
+    # plotitem = plotaxes.new_plotitem(plot_type='1d')
+    # plotitem.plot_var = potential_vorticity
+    # plotitem.plotstyle = '-'
+    # plotitem.color = 'b'
+    # plotitem.kwargs = {'linewidth':3}
 
-    # Figure for momentum components
-    plotfigure = plotdata.new_plotfigure(name='Momentum', figno=1)
+    # # Figure for momentum components
+    # plotfigure = plotdata.new_plotfigure(name='Momentum', figno=2)
 
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.axescmd = 'subplot(211)'
-    plotaxes.xlimits = [-0.5,0.5]
-    plotaxes.title = 'x-Momentum'
+    # # Set up for axes in this figure:
+    # plotaxes = plotfigure.new_plotaxes()
+    # plotaxes.axescmd = 'subplot(211)'
+    # plotaxes.xlimits = [-0.5,0.5]
+    # plotaxes.title = 'x-Momentum'
 
-    # Set up for item on these axes:
-    plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = 1
-    plotitem.plotstyle = '-'
-    plotitem.color = 'b'
-    plotitem.kwargs = {'linewidth':3}
+    # # Set up for item on these axes:
+    # plotitem = plotaxes.new_plotitem(plot_type='1d')
+    # plotitem.plot_var = 1
+    # plotitem.plotstyle = '-'
+    # plotitem.color = 'b'
+    # plotitem.kwargs = {'linewidth':3}
 
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.axescmd = 'subplot(212)'
-    plotaxes.xlimits = [-0.5,0.5]
-    plotaxes.title = 'y-Momentum'
+    # # Set up for axes in this figure:
+    # plotaxes = plotfigure.new_plotaxes()
+    # plotaxes.axescmd = 'subplot(212)'
+    # plotaxes.xlimits = [-0.5,0.5]
+    # plotaxes.title = 'y-Momentum'
 
-    # Set up for item on these axes:
-    plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = 2
-    plotitem.plotstyle = '-'
-    plotitem.color = 'b'
-    plotitem.kwargs = {'linewidth':3}
+    # # Set up for item on these axes:
+    # plotitem = plotaxes.new_plotitem(plot_type='1d')
+
+    # def y_momentum(current_data):
+    #     if Solver == 'ROGERS_GEO':
+    #         hv = current_data.q[2,:] + hv0
+    #     else:
+    #         hv = current_data.q[2,:]
+
+    #     return hv
+
+    # plotitem.plot_var = y_momentum
+    # plotitem.plotstyle = '-'
+    # plotitem.color = 'b'
+    # plotitem.kwargs = {'linewidth':3}
 
     return plotdata
 
