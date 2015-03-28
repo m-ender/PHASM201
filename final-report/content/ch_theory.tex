@@ -12,24 +12,24 @@ The two-dimensional SWEs are a system of three partial differential equations in
   \begin{align}
                             h_t + (hu)_x + (hv)_y & = 0 \\
     (hu)_t + \qty(hu^2 + \frac{1}{2}gh^2)_x + (huv)_y & = - ghB_x + fhv \\
-    (hv)_t + (huv)_x + (hv^2 + \frac{1}{2}gh^2)_y & = - ghB_y - fhu,
+    (hv)_t + (huv)_x + \qty(hv^2 + \frac{1}{2}gh^2)_y & = - ghB_y - fhu,
   \end{align}
 \end{subequations}
 
 where subscripts denote partial differentiation, $g$ is acceleration due to gravity and $f$ is the Coriolis coefficient. These can be obtained from the Navier--Stokes equations by assuming that the depth of the water is small compared to some significant horizontal length-scale and by depth-averaging the flow variables. For a full derivation see \citet{dellar2005shallow}.
 
-Numerically, two dimensional systems can be solved to a good approximation by applying a dimensional split. This refers to solving the equations on a grid along slices of constant $y$ first, and solving them along slices of constant $x$. During each of those steps, variation along the orthogonal direction is completely ignored. This amounts to setting $\pdv*{y} = 0$ for solving the equations only in the $x$-direction (and vice versa). As this approximate approach works very well, this report is only concerned with these $x$-split equations, which reduce the SWEs to a system in only one spatial dimension:
+Numerically, two dimensional systems can be solved to a good approximation by applying a dimensional splitting. This refers to solving the equations on a grid along slices of constant $y$ first, and then solving them along slices of constant $x$, for each time step. During each of those stages, variation along the orthogonal direction is completely ignored. This amounts to setting $\pdv*{y} = 0$ for solving the equations only in the $x$-direction (and vice versa). As this approximate approach works very well, this report is only concerned with these $x$-split equations, which reduce the SWEs to a system in only one spatial dimension:
 
 \begin{subequations}
   \label{eq:swe}
   \begin{align}
                            h_t + (hu)_x & = 0 \\
     (hu)_t + \qty(hu^2 + \frac{1}{2}gh^2)_x & = - ghB_x + fhv \\
-                       (hv)_t + (huv)_x & = - fhu.
+                       (hv)_t + (huv)_x & = - fhu
   \end{align}
 \end{subequations}
 
-It is common practice in fluid dynamics to use dimensionless variables, in order to reduce the system to a minimal amount of free parameters --- all additional parameters, like individual length scales, then merely give similarity solutions. To do so, we introduce a typical horizontal length scale $L$ (the width of our domain), a vertical length scale $H$ (the approximate depth of the water), a wave speed $c$ and a time scale $T$. A reasonable choice for $T$ is $L/c$, which is the time taken for a wave to travel across the domain. We can also define the wave speed as $c = \sqrt{gH}$, which is the speed of linear gravity waves at depth $H$. Using these parameters, we can rewrite the variables in terms of dimensionless quantities:
+It is common practice in fluid dynamics to use dimensionless variables, in order to reduce the system to a minimal amount of free parameters --- all additional parameters, like individual length scales, then merely give similarity solutions. To do so, we introduce a typical horizontal length scale $L$ (the width of our domain), a vertical length scale $H$ (a typical depth of the water), a wave speed $c$ and a time scale $T$. A reasonable choice for $T$ is $L/c$, which is the time taken for a wave to travel across the domain. We can also define the wave speed as $c = \sqrt{gH}$, which is the speed of linear gravity waves at depth $H$. Using these parameters, we can rewrite the variables in terms of dimensionless quantities:
 
 \begin{equation}
   t = T\bar t\qc x = L\bar x\qc y = L\bar y\qc h = H\bar h\qc u = c\bar u\qc v = c\bar v\qc B = H\bar B \label{eq:scaling}
@@ -52,7 +52,7 @@ so it remains unchanged. For the $hu$-equation, using both $T = L/c$ and $c^2 = 
   \Rightarrow (\bar h\bar u)_{\bar t} + \qty(\bar h\bar u^2 + \frac{1}{2} \bar h^2)_{\bar x} & = - \bar h\bar B_{\bar x} + \frac{fL}{c}\bar h\bar v.
 \end{align}
 
-This equation depends on a single parameter $K \equiv fL/c$. Similarly, for the $hv$-equation:
+This equation depends on a single parameter $K \equiv fL/c$, which measures the strength of the rotation. Similarly, for the $hv$-equation:
 
 \begin{align}
   (hv)_t + (huv)_x & = - fhu \\
@@ -65,9 +65,9 @@ From here on, the bars will be omitted, as the dimensionless quantities will be 
 \begin{subequations}
   \label{eq:swe_dl}
   \begin{align}
-    h_{t} + (h u)_{x} & = 0 \\
-    (hu)_{t} + \qty(hu^2 + \frac{1}{2} h^2)_{x} & = - hB_{x} + Khv \\
-    (hv)_{t} + (huv)_{x} & = -Khu
+    h_{t} + (h u)_{x} & = 0 \label{eq:swe_dl_h} \\
+    (hu)_{t} + \qty(hu^2 + \frac{1}{2} h^2)_{x} & = - hB_{x} + Khv \label{eq:swe_dl_hu} \\
+    (hv)_{t} + (huv)_{x} & = -Khu.\label{eq:swe_dl_hv}
   \end{align}
 \end{subequations}
 
@@ -82,7 +82,7 @@ The development of well-balanced methods is motivated by the desire to model sta
   \end{align}
 \end{subequations}
 
-The simplest equilibrium, which is exists regardless of the value of $K$ is the so called \emph{still water} or \emph{still lake} equilibrium, defined by $u = v = 0$ and $h_s$ being a constant. For simplicity, we will assume that $h_s = 1$, such that the dimension depth is $H$. In this case $h = 1 - B(x)$ and hence $h_x = - B_x$, which fulfils Eq.~\ref{eq:swe_eq_h}. All other terms in the equations are zero. This is the equilibrium addressed in most papers, including \citet{leveque1998balancing} and \citet{rogers2003mathematical} which are the focus of this report.
+The simplest equilibrium, which is exists regardless of the value of $K$ is the so called \emph{still water} or \emph{still lake} equilibrium, defined by $u = v = 0$ and $h_s$ being a constant. For simplicity, we will assume that $h_s = 1$, such that the dimension depth is $H$. In this case $h = 1 - B(x)$ and hence $h_x = - B_x$, which fulfils Eq.~\ref{eq:swe_eq_hu}. All other terms in the equations are zero. This is the equilibrium addressed in most papers, including \citet{leveque1998balancing} and \citet{rogers2003mathematical} which are the focus of this report.
 
 For non-zero $K$, there exists a less trivial, and geophysically much more relevant equilibrium state. Given the right velocity profile, any arbitrary (continuously differentiable) water surface profile can be maintained. This is called a geostrophic equilibrium, and most large-scale flows on Earth are close to such an equilibrium at all times. The condition on $v$ for a given profile can easily be derived from Eqs.~\ref{eq:swe_eq}. We assume that $u = 0$ and $h = h_s(x) - B(x)$. Then only the $x$-momentum equation is non-zero and gives:
 
@@ -90,7 +90,7 @@ For non-zero $K$, there exists a less trivial, and geophysically much more relev
   \qty(\frac{1}{2}h^2)_x &= -hB_x + Khv \\
   \Rightarrow h h_x &= -hB_x + Khv \\
   \Rightarrow h (h_s - B)_x &= -hB_x + Khv \\
-  \Rightarrow v &= \frac{(h_s)_x}{K}
+  \Rightarrow v &= \frac{(h_s)_x}{K} \label{eq:geo_eq}
 \end{align}
 
 There are other steady states, in particular those which involve non-zero $u$, but these depend on the given bathymetry and are beyond the scope of this report. See \citet{esler2005steady} for an analysis of the phase space of flow over a ridge.
@@ -98,11 +98,11 @@ There are other steady states, in particular those which involve non-zero $u$, b
 Nevertheless, we are interested in setting up systems with a uniform background flow, in order to test the numericals for states which are not the known equilibria. In these cases, the Coriolis term requires some practical considerations. Let $B = 0$ for now and consider uniform flow with $u = U$, $v = 0$ and $h_s = 1$ at $t = 0$. In this case, the momentum equations of \ref{eq:swe_dl} become
 
 \begin{align}
-  (u)_t &= Kv \\
-  (v)_t &= -Ku
+  u_t &= Kv \\
+  v_t &= -Ku
 \end{align}
 
-The solution to this system is circular motion with constant speed $U$. Hence, even without complicated bathymetry or an initial surface profile, this system cannot maintain uniform flow. This can be alleviated by introducing a transversal pressure gradient, $+KhU$ which balances the Coriolis force due to the background flow. From a practical point of view, this is equivalent to having the water at rest (in the rotating frame, i.e. in solid body rotation),towing an obstacle through the water and changing into the rest frame of the obstacle. The full equations for uniform background flow are thus
+The solution to this system is circular motion with constant speed $U$. Hence, even without complicated bathymetry or an initial surface profile, this system cannot maintain uniform flow. This can be alleviated by introducing a transversal pressure gradient, $+KhU$ which balances the Coriolis force due to the background flow. From a practical point of view, this is equivalent to having the water at rest (in the rotating frame, i.e. in solid body rotation), towing an obstacle through the water and changing into the rest frame of the obstacle. The full equations for uniform background flow are thus
 
 \begin{subequations}
   \label{eq:swe_dlU}
@@ -120,8 +120,8 @@ This section reviews the relevant theory of hyperbolic conservation laws and God
 Conservation laws are systems of partial differential equations (PDEs) which, in one dimension, can be written in the form:
 
 \begin{equation}
-  \vb q_t + \vb f(\vb q)_x = \vb s(\vb q).
-  \label{claw}
+  \vb q_t + \vb f(\vb q)_x = \vb s(\vb q, x).
+  \label{eq:claw}
 \end{equation}
 
 Here, $\vb q$ is a vector of density functions of conserved quantities, $\vb f$ is a \emph{flux vector}, while $\vb s$ stands for a number of \emph{source terms}. For the components $q_i$ to be conserved means that the integral $\int_{-\infty}^\infty (q_i - s_i)\,\dd x$ is independent of time. The flux terms describe how the quantities $\vb q$ are transported through the domain. Apart from actual sources or sinks the source terms $\vb s$ may be used to model a variety of physical and geometric effects.
@@ -130,7 +130,7 @@ For the purpose of this project only the above bathymetry and Coriolis source te
 
 Such a system is called \emph{hyperbolic} if the Jacobian matrix $\pdv*{\vb f}{\vb q}$ has real eigenvalues.
 
-Associating the dimensionless SWEs (Eq.\ref{eq:swe_dl}) with Eq.~\ref{claw}, the SWEs can be written in vector form using
+Associating the dimensionless SWEs (Eqs.~\ref{eq:swe_dl}) with Eq.~\ref{eq:claw}, the SWEs can be written in vector form using
 
 $$
   \vb q = \mqty( h \\ hu \\ hv ) \equiv \mqty( q_1 \\ q_2 \\ q_3 ),\;
@@ -149,11 +149,11 @@ The Jacobian of this matrix is
   &= \mqty(
     0 & 1 & 0 \\
     c^2 - u^2 & 2u & 0 \\
-    -uv & b & u
+    -uv & v & u
   ), \label{eq:swe_jacobian}
 \end{align}
 
-where $c = \sqrt{h}$ is the wave speed (for reasons that will become apparent further down). Note that a dimensional wave speed can be recovered by multiplying by $\sqrt{gH}$, giving the familiar result $c = \sqrt{gHh}$. This Jacobian has eigenvalues
+where $c = \sqrt{h}$ is the wave speed. Note that a dimensional wave speed can be recovered by multiplying by $\sqrt{gH}$, giving the familiar result $c = \sqrt{gHh}$. This Jacobian has eigenvalues
 
 \begin{align}
   \lambda_1 = u - c \qc \lambda_2 = u \qc \lambda_3 = u + c
@@ -176,19 +176,34 @@ Godunov's method has been studied thoroughly for homogeneous hyperbolic conserva
 
 where $x_{i-1/2}$ and $x_{i+1/2}$ are the boundaries of a control volume centred at $x_i$. As opposed to the differential form, this integral form admits discontinuities, like hydraulic jumps.
 
-Note that special care has to be taken with dry states in systems where negative values for one or more conserved quantities are unphysical. The SWEs are an example of such a system, as the water depth, $h$, is strictly non-negative. In fact, the SWEs do not even hold for regions where the depth is zero. Therefore, wet/dry fronts have to be dealt with differently than other cell boundaries. Modelling these is particularly important in certain geophysical flows, where they appear on beaches of protruding topography, or during outcropping of stratified flow. See \citet{toro2001shock}, Chapter 6, for exact Riemann solvers in the presence of dry states. For simplicity, this report assumes that the water depth is positive for all $x$ and $t$, such that dry states need not be accounted for.
+The numerical method can be implemented in various mathematically equivalent forms. In this report the \emph{wave propagation form} is used. For a full derivation, the reader is referred to \citet{leveque2002finite}, which first derives the method for scalar equations and subsequently generalises it for conservation law systems, nonlinear equations and ultimately nonlinear systems of equations. Here, only the result is quoted, using the same notation as the textbook.
 
-The integral form \ref{eq:claw_integral} is discretised on a regular grid, with cells of width $\Delta x$, centred at $x_i$. The cell edges are located at $x_{i\pm1/2} \equiv x_i \pm \Delta x/2$. To retain the conservation properties of the equations, the variables replaced by a piecewise constant approximation, where the value $\vb Q_i$ in each of the cells is equal to the true cell average. Then this cell average can be updated over a finite time step with a numerical method of the form
+The equations are discretised as follows. The domain is divided into a regular grid of $N$ cells of width $\Delta x$. The positions of the cell centres will be denoted as $x_i$ for $i \in \{0, 1, ..., N-1\}$, and the cell boundaries at $x_{i \pm 1/2}$. At $t_0 = 0$, the conserved quantity $\vb q$ is replaced by a piecewise constant function, which has value $\vb Q_i^0$ in cell $i$, where
 
+\begin{equation}
+  \vb Q_i^0 = \frac{1}{\Delta x} \int_{x_{i-1/2}}^{x_{i+1/2}} \vb q(x, t=0)\,\dd x
+\end{equation}
+
+is the average of $\vb q$ across the cell. The values of the $\vb Q_i$ for the next time level $t_{n+1}$ can now be computed based on time level $t_n$ with a method of the form
+
+\begin{equation}
+\label{eq:wpf}
+  \vb Q_i^{n+1} = \vb Q_i^n - \frac{\Delta t}{\Delta x} (\mathcal{A}^+ \Delta \vb Q_{i-1/2} + \mathcal{A}^- \Delta \vb Q_{i+1/2}),
+\end{equation}
+
+where $\Delta t = t_{n+1} - t_n$. The final two terms are called $fluctuations$ and are defined as
+
+\begin{subequations}
+\label{eq:fluctuations}
 \begin{align}
-  \vb Q_i^{n+1} = \vb Q_i^n - \frac{\Delta t}{\Delta x}(\vb F_{i+1/2}^n - \vb F_{i-1/2}^n),
+  \mathcal{A}^- \Delta \vb Q_{i+1/2} &= \vb f(\vb Q_{i+1/2}^\downarrow) - \vb f(\vb Q_{i}) \\
+  \mathcal{A}^+ \Delta \vb Q_{i-1/2} &= \vb f(\vb Q_{i}) - \vb f(\vb Q_{i-1/2}^\downarrow),
 \end{align}
+\end{subequations}
 
-where the superscripts denote the time level and $\vb F_{i+1/2}^n$ is a suitable approximation to the time integral of the flux through that boundary.
+where $\vb Q_{i-1/2}^\downarrow$ denotes the value $\vb q(x_{i-1/2}, t_n < t < t_{n+1})$, which can be obtained by solving the nonlinear Riemann problem between $\vb Q_{i-1}$ and $\vb Q_i$ (the Riemann problem has a similarity solution which is constant along rays of $x/t$, hence this value is well-defined). These fluctuations represent the waves propagating into the cell from the step functions at the cell's boundaries.
 
-ADD GODUNOV'S METHOD AND WAVE PROPAGATION FORM HERE.
-
-The previous discussion assumed homogeneous systems. However, the interest of this project does not lie in homogeneous systems, but in conservation laws with source terms. Similar to how a dimensional splitting can be applied, traditionally, hyperbolic systems with source terms were solved by splitting the system into two parts. The homogeneous hyperbolic PDEs:
+The previous discussion assumed homogeneous systems. However, the interest of this project does not lie in homogeneous systems, but in conservation laws with source terms. Similar to how a dimensional splitting can be applied, traditionally, the simplest way to solve hyperbolic systems with source terms is by splitting the system into two parts. The homogeneous hyperbolic PDEs:
 
 $$
   \vb q_t + \vb f(\vb q)_x = 0.
@@ -197,20 +212,44 @@ $$
 And a set of ordinary different equations (ODEs) for the source terms:
 
 $$
-  \vb q_t = \vb s(\vb q).
+  \vb q_t = \vb s(\vb q, x).
 $$
 
-This way, the homogeneous system can be solved using well-studied Godunov-type methods, and the source terms can be solved independently by a simple integration in time, also using established methods like Runge-Kutta (originally developed by \citet{runge1895numerische} and \citet{kutta1901beitrag}; see \citet{kaw2009numerical}, Sections 8.3 and 8.4 for a modern account). See \citet{toro2001shock}, Section 12.2.2 or \citet{leveque2002finite}, Sections 17.2.2 to 17.5, for instance.
+The appeal of this approach is that the homogeneous system can be solved using well-studied Godunov-type methods, and the source terms can be solved independently by a simple integration in time, also using established methods like Runge-Kutta (originally developed by \citet{runge1895numerische} and \citet{kutta1901beitrag}; see \citet{kaw2009numerical}, Sections 8.3 and 8.4 for a modern account). See \citet{toro2001shock}, Section 12.2.2 or \citet{leveque2002finite}, Sections 17.2.2 to 17.5, for instance.
 
-\section{The Approximate Roe Solver}
+However, as noted earlier, in systems at or close to equilibrium when $\vb q_t \sim 0$, the terms $\vb f(\vb q)_x$ and $\vb s(\vb q, x)$ may actually both be large (and approximately equal). In this case, the two separate numerical methods will both apply a substantial update to $\vb q$. In theory, these updates should cancel, but in practice they will almost never cancel completely. This causes numerical noise which means that equilibria cannot be preserved exactly.
 
-The SWEs are a non-linear system, for which obtaining the full solution to each Riemann problem can be computationally very expensive. A common approach is to linearise the problem at each cell boundary in the form
+\section{Roe's Approximate Riemann Solver}
+\label{sec:roe}
+
+The SWEs are a nonlinear system, for which obtaining the full solution to each Riemann problem can be computationally very expensive. Furthermore, only very little information about the full solution is actually used (in particular, only the value along the cell edge). Therefore, several approximate Riemann solvers have been developed. A common approach is to linearise the problem at each cell boundary in the form
 
 \begin{align}
   \vb q_t + \vu A_{i-1/2} \vb q_x = 0,
 \end{align}
 
-where $\vu A_{i-1/2}$ is an approximation to the true flux Jacobian $\pdv*{\vb f}{\vb q}$ evaluated at $x_{i-1/2}$. One of the most popular approximations is the solver due to \citet{roe1981approximate}. The following derivation and notation follows closely section 15.3 of \citet{leveque2002finite}. The basic idea is to perform an invertible change of variables $\vb z = \vb z(\vb q)$, and parametrise this variable between the cell values surrounding the boundary in question:
+where $\vu A_{i-1/2}$ is an approximation to the true flux Jacobian $\pdv*{\vb f}{\vb q}$ evaluated at $x_{i-1/2}$.
+
+For a linear problem the fluctuations can be written
+
+\begin{subequations}
+  \label{eq:approx_fluct}
+\begin{align}
+  \mathcal{A}^- \Delta \vb Q_{i+1/2} &= \sum_{p=1}^{M_w} (\lambda_{i+1/2}^p)^- \mathcal{W}_{i+1/2}^p \\
+  \mathcal{A}^+ \Delta \vb Q_{i-1/2} &= \sum_{p=1}^{M_w} (\lambda_{i-1/2}^p)^+ \mathcal{W}_{i-1/2}^p,
+\end{align}
+\end{subequations}
+
+where the sum is over the characteristic waves of the Jacobian, $\lambda_{i-1/2}^p$ are the wavespeeds of the $p$'th characteristic (which are the eigenvalues of $A_{i-1/2}$) and $\mathcal{W}_{i-1/2}^p$ are the waves, which are proportional to the right eigenvectors $r_{i-1/2}^p$ and decompose the step at $x_{i-1/2}$ such that $Q_i - Q_{i-1} = \sum_{p=1}^{M_w} \mathcal{W}_{i-1/2}^p$. The superscript $+$ and $-$ are defined as:
+
+\begin{align}
+  w^+ &= \max(0, w) \\
+  w^- &= \min(0, w)
+\end{align}
+
+One of the most popular approximations is the solver due to \citet{roe1981approximate}. The following derivation and notation follows closely section 15.3 of \citet{leveque2002finite}. However, LeVeque only derived the solver for the one-dimensional SWEs (without transverse momentum), whereas this section presents a derivation for the $x$-split equations used throughout this report.
+
+The basic idea is to perform an invertible change of variables $\vb z = \vb z(\vb q)$, and parametrise this variable between the cell values surrounding the boundary in question:
 
 \begin{align}
   \vb z(\xi) = \vb Z_{i-1} + (\vb Z_i - \vb Z_{i-1})\xi
@@ -238,53 +277,53 @@ The purpose of the change of variables is to make the integrals more easily solv
 Following the derivation for the one-dimensional SWEs in section 15.3.3 of \citet{leveque2002finite}, a Roe solver can be derived for the $x$-split SWEs by the following choice for $\vb z$:
 
 \begin{align}
-  \vb z = \sqrt{h} \vb \quad \Rightarrow \quad \mqty(z_1 \\ z_2 \\ z_3) = \mqty(\sqrt{h} \\ \sqrt{h}u \\ \sqrt{h}v)
+  \vb z = h^{-1/2}\vb q \quad \Rightarrow \quad \mqty(z^1 \\ z^2 \\ z^3) = \mqty(\sqrt{h} \\ \sqrt{h}u \\ \sqrt{h}v)
 \end{align}
 
 Inverting this relation:
 
 \begin{align}
-  \vb q = \mqty(z_1^2 \\ z_1z_2 \\ z_1z_3) \quad \Rightarrow \quad \dv{q}{z} = \mqty(
-    2z_1 & 0 & 0 \\
-    z_2 & z_1 & 0 \\
-    z_3 & 0 & z_1
+  \vb q = \mqty((z^1)^2 \\ z^1z^2 \\ z^1z^3) \quad \Rightarrow \quad \dv{q}{z} = \mqty(
+    2z^1 & 0 & 0 \\
+    z^2 & z^1 & 0 \\
+    z^3 & 0 & z^1
   )
 \end{align}
 
 Further, writing $\vb f$ as in terms of the components of $\vb z$, the Jacobian can be found:
 
 \begin{align}
-  \vb f = \mqty(z_1z_2 \\ z_2^2 + \frac{1}{2}z_1^4 \\ z_2z_3) \quad \Rightarrow \quad \dv{f}{z} = \mqty(
-    z_2 & z_1 & 0 \\
-    2 z_1^3 & 2 z_2 & 0 \\
-    0 & z_3 & z_2
+  \vb f = \mqty(z^1z^2 \\ (z^2)^2 + \frac{1}{2}(z^1)^4 \\ z^2z^3) \quad \Rightarrow \quad \dv{f}{z} = \mqty(
+    z^2 & z^1 & 0 \\
+    2 (z^1)^3 & 2 z^2 & 0 \\
+    0 & z^3 & z^2
   )
 \end{align}
 
-Now, let $z_k = (Z_k)_{i-1} + \qty((Z_k)_i - (Z_k)_{i-1})\xi$ for $k = 1, 2, 3$ and perform the integrals in Eqs.~\ref{eq:roe_integrals}. As for the one-dimensional SWEs, the linear terms become
+Now, let $z_k = Z^k_{i-1} + \qty(Z^k_i - Z^k_{i-1})\xi$ for $k = 1, 2, 3$ and perform the integrals in Eqs.~\ref{eq:roe_integrals}. As for the one-dimensional SWEs, the linear terms become
 
 \begin{align}
-  \frac{1}{2}\qty((Z_k)_{i-1} + (Z_k)_i) \equiv \bar Z_k
+  \frac{1}{2}\qty(Z^k_{i-1} + Z^k_i) \equiv \bar Z^k
 \end{align}
 
 and the cubic term becomes
 
 \begin{align}
-  \frac{1}{2}\qty((Z_1)_{i-1} + (Z_1)_i) \frac{1}{2} \qty((Z_1)_{i-1}^2 + (Z_1)_i^2) \equiv \bar Z_1 \bar h.
+  \frac{1}{2}\qty(Z^1_{i-1} + Z^1_i) \frac{1}{2} \qty((Z^1_{i-1})^2 + (Z^1_i)^2) \equiv \bar Z^1 \bar h.
 \end{align}
 
 Hence, the intermediate matrices are
 
 \begin{align}
   \vu B_{i-1/2} &= \mqty(
-    2\bar Z_1 & 0 & 0 \\
-    \bar Z_2 & \bar Z_1 & 0 \\
-    \bar Z_3 & 0 & Z_1
+    2\bar Z^1 & 0 & 0 \\
+    \bar Z^2 & \bar Z^1 & 0 \\
+    \bar Z^3 & 0 & Z^1
   ) \\
   \vu C_{i-1/2} &= \mqty(
-    \bar Z_2 & \bar Z_1 & 0 \\
-    2 \bar Z_1 \bar h & 2\bar Z_2 & 0 \\
-    0 & \bar Z_3 & \bar Z_2
+    \bar Z^2 & \bar Z^1 & 0 \\
+    2 \bar Z^1 \bar h & 2\bar Z^2 & 0 \\
+    0 & \bar Z^3 & \bar Z^2
   )
 \end{align}
 
@@ -293,12 +332,12 @@ and using Eq.~\ref{eq:roe_product}, the approximate flux Jacobian is found to be
 \begin{align}
   \vu A_{i-1/2} &= \mqty(
     0 & 1 & 0 \\
-    \bar h - (\bar Z_2 / \bar Z_1)^2 & 2 \bar Z_2 / \bar Z_1 & 0 \\
-    - \bar Z_2 \bar Z_3 / \bar Z_1^2 & \bar Z_3 / \bar Z_1 & \bar Z_2 / \bar Z_1
+    \bar h - (\bar Z^2 / \bar Z^1)^2 & 2 \bar Z^2 / \bar Z^1 & 0 \\
+    - \bar Z^2 \bar Z^3 / (\bar Z^1)^2 & \bar Z^3 / \bar Z^1 & \bar Z^2 / \bar Z^1
   ) \\
   &= \mqty(
     0 & 1 & 0 \\
-    \bar h - \hat u^2 && 2 \hat u & 0 \\
+    \bar h - \hat u^2 & 2 \hat u & 0 \\
     -\hat u\hat v & \hat v & \hat u
   ),
 \end{align}
@@ -310,15 +349,317 @@ where
   \hat v &= \frac{\sqrt{h_{i-1}}v_{i-1}+\sqrt{h_i}v_i}{\sqrt{h_{i-1}}+\sqrt{h_i}}
 \end{align}
 
-are special weighted averages, called \emph{Roe averages}. Note that, comparing this result with Eq.~\ref{eq:swe_jacobian}, just as in the one-dimensional case this is simply the flux Jacobian of the SWEs evaluated at this special Roe-averaged state, with average wave speed, $\hat c = \sqrt{\bar h}$.
+are special weighted averages, called \emph{Roe averages}. Note that, comparing this result with Eq.~\ref{eq:swe_jacobian}, just as in the one-dimensional case this is simply the flux Jacobian of the SWEs evaluated at this special Roe-averaged state, with average wave speed, $\hat c = \sqrt{\bar h}$. This gives right eigenvectors
 
+\begin{align}
+  r_{i-1/2}^1 = \mqty(1 \\ \hat u - \hat c \\ \hat v) \qc
+  r_{i-1/2}^2 = \mqty(0 \\ 0 \\ 1) \qc
+  r_{i-1/2}^3 = \mqty(1 \\ \hat u + \hat c \\ \hat v)
+\end{align}
 
+Finally, the waves $\mathcal{W}_{i-1/2}^p = \alpha_{i-1/2}^p r_{i-1/2}^p$ can be found by inverting the matrix of right eigenvectors (to obtain a matrix of left eigenvectors) and multiplying it into the step across $x_{i-1/2}$:
 
-\begin{itemize}
-  \item unbalanced method
-  \item for each balanced method:
-    \begin{itemize}
-      \item quick recap of the method in general
-      \item derivation of method for our equations
-    \end{itemize}
-\end{itemize}
+\begin{equation}
+  \vb*{\alpha}_{i-1/2} = \frac{1}{2\hat c}\mqty(
+    \hat u + \hat c & -1 & 0 \\
+    -2\hat c \hat v &  0 & 2\hat c \\
+    -\hat u + \hat c & 1 & 0
+  ) (\vb Q_i - \vb Q_{i-1})
+\end{equation}
+
+This, together with the eigenvalues and eigenvectors provides all the information needed to implement a method based on the fluctuations in Eqs.~\ref{eq:approx_fluct}. This method will be referred to as the \emph{unbalanced method} throughout the rest of the report.
+
+\section{Balanced Method: LeVeque}
+
+One of the earlier well-balanced methods, which is also based on the wave propagation form of Godunov's method, is due to \citet{leveque1998balancing}. LeVeque introduces the general theory behind the method, which this report will give a short overview of, and then applies it to the one- and two-dimensional SWEs with bathymetry, showing that it is well-balanced for perturbations about still water. In this report, based on LeVeque's work, a solver for $x$-split one-dimensional SWEs with Coriolis terms is derived, which is also well-balanced for geostrophic equilibria.
+
+The basic idea is to implement the source terms by introducing additional Riemann problems at the cell centres, thereby replacing each cell value $\vb Q_i$ with two different values $\vb Q_i^-$ and $\vb Q_i^+$. To ensure that the method is still conservative, the cell average needs to be maintained, i.e.
+
+\begin{equation}
+  \label{eq:leveque_avg_condition}
+  \vb Q_i = \frac{1}{2}(\vb Q_i^- + \vb Q_i^+).
+\end{equation}
+
+Furthermore, the step is chosen such that
+
+\begin{equation}
+  \label{eq:leveque_step_condition}
+  \vb f(\vb Q_i^+) - \vb f(\vb Q_i^-) = \vb s(\vb Q_i, x_i) \Delta x.
+\end{equation}
+
+This condition means that the waves arising from the new Riemann problem are exactly equal and opposite to the effect of the source term in this cell, which implies that neither the source terms nor this Riemann problem have to be solved in the numerical method. The resulting method is simply
+
+\begin{equation}
+  \vb Q_i^{n+1} = \vb Q_i^n - \frac{\Delta t}{\Delta x} (\mathcal{A}^+ \Delta \vb{\tilde Q}_{i-1/2} + \mathcal{A}^- \Delta \vb{\tilde Q}_{i+1/2}),
+\end{equation}
+
+where the $\mathcal{A}^\pm \Delta \vb{\tilde Q}_{i-1/2}$ are analogous to the $\mathcal{A}^\pm \Delta \vb{Q}_{i-1/2}$ from the unbalanced method, but based on the modified cell values $\vb Q_{i-1}^+$ and $\vb Q_i^-$ instead. Note that this refers to the fluctuations from the exact solution of the Riemann problems. However, approximate solvers can be employed in exactly the same way as for the unbalanced method. The benefit of this method that the displacement of the cell values leads to small or vanishing Riemann problems at the edges near equilibrium.
+
+Difficulties in implementing this method arise in determining the values of $\vb Q_i^\pm$ for nonlinear systems like the SWEs.
+
+\subsection{A Solver for the SWEs with Bathymetry and Rotation}
+\label{sec:leveque}
+
+\citet{leveque1998balancing} shows how these can be found if bathymetry terms included. The following presents a derivation of a new method which also supports the Coriolis terms.
+
+First, note that the $h$-equation of the SWEs, Eq.~\ref{eq:swe_dl_h}, does not contain any source terms, so by Eq.~\ref{eq:leveque_step_condition},
+
+\begin{equation}
+  (hu)_i^+ = (hu)_i^- = (hu)_i \equiv m_i,
+\end{equation}
+
+i.e. the $x$-momentum remains unchanged. To ensure Eq.~\ref{eq:leveque_avg_condition}, the new values can be chosen as equal and opposite offsets from the cell average:
+
+\begin{align}
+  h_i^\pm &= h_i \pm \delta_i \\
+  (hv)_i^\pm &= (hv)_i \mp \epsilon_i,
+\end{align}
+
+such that only $\delta_i$ and $\epsilon_i$ need to be found from Eq.~\ref{eq:leveque_step_condition}. For the $hu$-equation, Eq.~\ref{eq:swe_dl_hu}, this condition yields
+
+\begin{align}
+  \qty(hu^2 + \frac{1}{2}h^2)_i^+ - \qty(hu^2 + \frac{1}{2}h^2)_i^- &= (- h_i (B_x)_i + K (hv)_i)\Delta x \\
+  \qty(\frac{m_i^2}{h_i^+} + \frac{1}{2}(h_i^+)^2) - \qty(\frac{m_i^2}{h_i^-} + \frac{1}{2}(h_i^-)^2) &= (- h_i (B_x)_i + K (hv)_i)\Delta x \\
+  m_i^2\qty(\frac{1}{h_i+\delta_i} - \frac{1}{h_i-\delta_i}) + \frac{1}{2} ((h_i+\delta_i)^2 - (h_i-\delta_i)^2) &= (- h_i (B_x)_i + K (hv)_i)\Delta x \\
+  m_i^2\qty(\frac{1}{h_i+\delta_i} - \frac{1}{h_i-\delta_i}) + 2 h_i \delta_i &= (- h_i (B_x)_i + K (hv)_i)\Delta x,
+\end{align}
+
+which gives a cubic equation for $\delta_i$. As in LeVeque's paper, if $u = 0$, which is the case for both still water and geostrophic equilibria, the solution is simply
+
+\begin{equation}
+  \label{eq:leveque_del_init}
+  \delta_i = \frac{\Delta x}{2} \qty(-(B_x)_i + K\frac{(hv)_i}{h_i}).
+\end{equation}
+
+If $u \neq 0$, solving the cubic can be more difficult. LeVeque proposes using a few iterations of the Newton-Raphson method (see any undergraduate textbook covering numerical methods, e.g. \citet{riley2006mathematical}, pp. 990--992), using Eq.~\ref{eq:leveque_del_init} as an initial guess. The author of this report has also attempted solving the cubic exactly, although this raises the question, which root should be chosen if there are multiple real roots. See Chapter~\ref{ch:results} for evaluation of the results of the choices.
+
+Once $\delta_i$ has been found, the step condition \ref{eq:leveque_step_condition} imposed on the $hv$-equation, Eq.~\ref{eq:swe_dl_hv}, can be used to obtain $\epsilon_i$:
+
+\begin{align}
+  \qty(huv)^+ - \qty(huv)^- &= K(hu)_i\Delta x \\
+  m_i\qty(\frac{(hv)_i^+}{h_i^+} - \frac{(hv)_i^-}{h_i^-}) &= K m_i \Delta x \\
+  \frac{(hv)_i + \epsilon_i}{h_i + \delta_i} - \frac{(hv)_i - \epsilon_i}{h_i - \delta_i} &= K \Delta x \\
+  ((hv)_i+\epsilon_i)(h_i-\delta_i) - ((hv)_i-\epsilon_i)(h_i+\delta_i) &= K\Delta x (h_i^2 - \delta_i^2) \\
+  2\epsilon_i h_i - 2(hv)_i \delta_i &= K\Delta x (h_i^2 - \delta_i^2) \\
+  \epsilon_i &= \frac{K}{2h_i} \Delta x(h_i^2 - \delta_i^2) + \frac{(hv)_i \delta_i}{h_i}
+\end{align}
+
+Recall that in the presence of a uniform background flow, an additional source term appears in the $hv$-equation (see Eq.~\ref{eq:swe_dlU}). For this case, a similar can be derived:
+
+\begin{equation}
+  \epsilon_i = \frac{K}{2} \qty(\frac{U}{m_i} - \frac{1}{h_i}) \Delta x(h_i^2 - \delta_i^2) + \frac{(hv)_i \delta_i}{h_i}
+\end{equation}
+
+Note that this causes problems if the $x$-momentum is zero anywhere in the domain.
+
+LeVeque mentions in the paper that the equations simplify slightly if the discretised bathymetry is defined on the cell edges as opposed to the cell centres. It should be stressed that this is \emph{necessary}, for the method to be perfectly well-balanced. The author has attempted cell-centred schemes as well, and while they generate considerably less noise than an unbalanced method they will not preserve equilibria exactly. Recall that for geostrophic equilibria, another $x$-derivative enters the source terms at equilibrium (Eq.~\ref{eq:geo_eq}). This means that $h_s$ also has to be discretised on the cell edges in order to maintain geostrophic equilibria exactly. This can be shown explicitly:
+
+Assume that the bathymetry is discretised as $B_{i-1/2}$ and the initial surface profile as $(h_s)_{i-1/2}$. Furthermore, the discretised $x$-derivatives at the cell centres should be defined via the central differences of the corresponding cell edges:
+
+\begin{align}
+  (B_x)_i &= \frac{B_{i+1/2}-B_{i-1/2}}{\Delta x} \\
+  ((h_s)_x)_i &= \frac{(h_s)_{i+1/2}-(h_s)_{i-1/2}}{\Delta x}
+\end{align}
+
+Similarly, the initial condition for the $h_i$ and $(hv)_i$ should be based on the averages of the cell edge values:
+
+\begin{align}
+  h_i &= \frac{1}{2}((h_s)_{i-1/2} + (h_s)_{i+1/2}) - \frac{1}{2}(B_{i-1/2} + B_{i+1/2}) \\
+  (hv)_i &= \frac{h_i ((h_s)_x)_i}{K} = \frac{h_i ((h_s)_{i+1/2}-(h_s)_{i-1/2})}{K\Delta x}
+\end{align}
+
+Using these values, Eq.~\ref{eq:leveque_del_init} gives a depth offset of
+
+\begin{equation}
+  \delta_i = \frac{\Delta x}{2}(((h_s)_x)_i-(B_x)_i) = \frac{1}{2}((h_s)_{i+1/2}-(h_s)_{i-1/2}-B_{i+1/2}+B_{i-1/2}).
+\end{equation}
+
+One can now compare $h_{i-1}^+$ and $h_i^-$:
+
+\begin{align}
+  h_{i-1}^+ &= h_{i-1} + \delta_{i-1} \\
+  &= (h_s)_{i-1/2} - B_{i-1/2} \\
+  h_{i}^- &= h_{i} - \delta_{i} \\
+  &= (h_s)_{i-1/2} - B_{i-1/2}.
+\end{align}
+
+Hence, all the Riemann problems at the cell edges vanish. Note that the value taken at the cell edges is essentially $h_{i-1/2}$. As the Riemann problems vanish, all geostrophic equilibria are preserved exactly. The author has verified this for several different systems. See Chapter~\ref{ch:results} for details.
+
+TODO: Derive a similar result for $(hv)_{i-1}^+$ and $(hv)_i^-$.
+
+\section{Balanced Method: Rogers et al.}
+
+A different well-balanced method has been developed in \citet{rogers2001adaptive} and then generalised in \citet{rogers2003mathematical}. As opposed to LeVeque's solver, this method is developed specifically for approximate Riemann solvers based on a quasi-linearisation of the system (such as Roe's solver).
+
+The basic idea is to subtract the equilibrium system off the equations, which results in a change of variables where the vector $\vb q$ is replaced by deviations from the chosen equilibrium. Note that this implies that the resulting solver will only be well-balanced for a single equilibrium. While it is possible to derive a class of solvers for several equilibria (e.g. arbitrary geostrophic equilibria), which can easily be parametrised, one has to choose a particular equilibrium before using the solver on any given system.
+
+Unlike the previous section, this one is only loosely based on the corresponding paper. The author attempted implementing the method as presented in the paper, but was not able to make it work. This section presents an alternative derivation --- the author's original work --- which yields a slightly different, but still well-balanced method which the author found to be working. This is still based on the idea of Rogers et al. of subtracting off the equilibrium system, so the resulting solver will be referred to as Rogers's solver. For details about the discrepancies with \citet{rogers2003mathematical}, see Appendix~\ref{ap:rogers}.
+
+Consider again the general form of a conservation law, Eq.~\ref{eq:claw}:
+
+$$
+  \vb q_t + \vb f(\vb q)_x = \vb s(\vb q, x)
+$$
+
+One can evaluate this equation at some equilibrium state $\eq{\vb q}$:
+
+\begin{align}
+  \eq{\vb q}_t + \vb f(\eq{\vb q})_x &= \vb s(\eq{\vb q}, x) \\
+  \qq{or} \eq{\vb q}_t + \eq{\vb f}_x &= \eq{\vb s}
+\end{align}
+
+Subtracting this equation off the conservation law, deviatoric quantities can be defined:
+
+\begin{align}
+  (\vb q - \eq{\vb q})_t + (\vb f - \eq{\vb f})_x &= \vb s - \eq{\vb s} \\
+  \qq{or} \vb q'_t + \vb f'_x &= \vb s'
+\end{align}
+
+Now, the quasi-linearisation can be applied:
+
+\begin{align}
+  \vb q'_t + (\vb f(\vb q) - \vb f(\eq{\vb q}))_x &= \vb s' \label{eq:rogers_discr}\\
+  \vb q'_t + \vb f(\vb q)_x - \vb f(\eq{\vb q})_x &= \vb s' \\
+  \vb q'_t + \pdv{\vb f(\vb q)}{\vb q} \vb q_x - \pdv{\vb f(\eq{\vb q})}{\eq{\vb q}} \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q_x - \eq{\vb A} \eq{\vb q}_x &= \vb s',
+\end{align}
+
+where $\vb A$ is the Jacobian of $\vb f$ and $\eq{\vb A}$ is the same Jacobian, evaluated at the equilibrium state $\eq{\vb q}$. This can be further manipulated, by subtracting and adding a cross term:
+
+\begin{align}
+  \vb q'_t + \vb A \vb q_x - \vb A \eq{\vb q}_x + \vb A \eq{\vb q}_x - \eq{\vb A} \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A (\vb q_x - \eq{\vb q}_x) + (\vb A  - \eq{\vb A}) \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x &= \vb s' - \vb A' \eq{\vb q}_x, \label{eq:rogers_method}
+\end{align}
+
+where $\vb A' \equiv \vb A - \eq{\vb A}$. This has the same form as a quasi-linearised method of the original equations, where $\vb q$ and $\vb s$ have been replaced by their deviatoric pendants, but the flux Jacobian remains unchanged, and an additional source term has been added. These source terms can be computed with the same source splitting as used in the unbalanced method. This makes it very easy to derive solvers based on this method: apart from choosing an equilibrium state, only $\vb A' \eq{\vb q}_x$ has to be computed --- apart from that the unbalanced solver can be adapted trivially.
+
+Note that both $\vb s' = \vb s(\vb q) - \vb s(\eq{\vb q})$ and $\vb A' = \vb A(\vb q, x) - \vb A(\eq{\vb q}, x)$ vanish when $\vb q = \eq{\vb q}$. In this case, one also has $\vb q' = 0$ everywhere and so $\vb q'_x = 0$. That is, when the system is in equilibrium there are neither flux terms nor source terms to compute and the method is perfectly well-balanced even though the system is still split into flux and source equations.
+
+The system can be solved using any approximate Riemann solver to estimate the flux Jacobian $\vb A$ at the cell edges. For simplicity, the Roe solver derived for the unbalanced method will be used for this report.
+
+\subsection{A Solver for the Still Water Equilibrium}
+\label{sec:rogers_still}
+
+Consider the $x$-split SWEs with bathymetry and Coriolis terms, Eqs.~\ref{eq:swe_dl} and its Jacobian, Eq.~\ref{eq:swe_jacobian}. In the following, a well-balanced solver for the still water equilibrium is derived.
+
+Without loss of generality, the still water level can be taken as $h_s = 1$. Define the equilibrium water depth as $h_0 \equiv 1 - B$. Hence, $\eq{\vb q} = (h_0, 0, 0)$, and $\vb q' = (\eta, hu, hv)$, where $\eta \equiv h - h_0$ is the deviation from the still water depth. Note that $(h_0)_x = - B_x$.
+
+The terms in Eq.~\ref{eq:rogers_method} are easily computed:
+
+\begin{align}
+  \vb s' &= \vb s(\vb q) - \vb s(\eq{\vb q}) \\
+  &= \mqty(0 \\ -h B_x + K h v \\ - K h u) - \mqty(0 \\ -h_0 B_x + 0 \\ - 0) \\
+  &= \mqty(0 \\ -(h-h_0) B_x + K h v \\ - K h u) \\
+  &= \mqty(0 \\ -\eta B_x + K h v \\ - K h u).
+\end{align}
+
+And:
+
+\begin{align}
+  \vb A' &= \vb A(\vb q) - \vb A(\eq{\vb q}) \\
+  &= \mqty(
+    0 & 1 & 0 \\
+    h - u^2 & 2u & 0 \\
+    -uv & v & u
+  ) - \mqty(
+    0 & 1 & 0 \\
+    h_0 - 0 & 0 & 0 \\
+    0 & 0 & 0
+  ) \\
+  &= \mqty(
+    0 & 0 & 0 \\
+    (h - h_0) - u^2 & 2u & 0 \\
+    -uv & v & u
+  ) \\
+  &= \mqty(
+    0 & 0 & 0 \\
+    \eta - u^2 & 2u & 0 \\
+    -uv & v & u
+  )
+\end{align}
+
+The source terms of Eq.~\ref{eq:rogers_method} are then
+
+\begin{align}
+  \vb s' - \vb A' \eq{\vb q}_x
+  &= \mqty(0 \\ -\eta B_x + K h v \\ - K h u) - \mqty(
+    0 & 0 & 0 \\
+    \eta - u^2 & 2u & 0 \\
+    -uv & v & u
+  ) \vdot \mqty(h_0 \\ 0 \\ 0)_x \\
+  &= \mqty(0 \\ -\eta B_x + K h v \\ - K h u) - \mqty(
+    0 & 0 & 0 \\
+    \eta - u^2 & 2u & 0 \\
+    -uv & v & u
+  ) \vdot \mqty(- B_x \\ 0 \\ 0) \\
+  &= \mqty(0 \\ -\eta B_x + K h v \\ - K h u) - \mqty(0 \\ - \eta B_x + u^2 B_x \\ uv B_x) \\
+  &= \mqty(0 \\ K h v - u^2 B_x \\ - K h u - u v B_x )
+\end{align}
+
+\subsection{A Solver for Geostrophic Equilibria}
+\label{sec:rogers_geo}
+
+Similarly, a solver can be derived for any particular geostrophic equilibrium, as defined by Eq.~\ref{eq:geo_eq}, given its surface profile $h_s(x)$.
+
+The equilibrium state is $\eq{\vb q} = (h_0, 0, (hv)_0)$, where $h_0(x) = h_s(x) - B(x)$ and $(hv)_0 = h_0 (h_s)_x / K$. This gives $\vb q' = (\eta, hu, \chi)$ where $\eta = h - h_0$ and $\chi = hv - (hv)_0$. Now the source terms can be calculated:
+
+\begin{align}
+  \vb s' &= \vb s(\vb q) - \vb s(\eq{\vb q}) \\
+  &= \mqty(0 \\ -h B_x + K h v \\ - K h u) - \mqty(0 \\ -h_0 B_x + K (hv)_0 \\ - 0) \\
+  &= \mqty(0 \\ -(h-h_0) B_x + K (hv - (hv)_0) \\ - K h u) \\
+  &= \mqty(0 \\ -\eta B_x + K \chi \\ - K h u).
+\end{align}
+
+And:
+
+\begin{align}
+  \vb A' &= \vb A(\vb q) - \vb A(\eq{\vb q}) \\
+  &= \mqty(
+    0 & 1 & 0 \\
+    h - u^2 & 2u & 0 \\
+    -uv & v & u
+  ) - \mqty(
+    0 & 1 & 0 \\
+    h_0 - 0 & 0 & 0 \\
+    0 & \frac{(hv)_0}{h_0} & 0
+  ) \\
+  &= \mqty(
+    0 & 0 & 0 \\
+    (h - h_0) - u^2 & 2u & 0 \\
+    -uv & v - \frac{(hv)_0}{h_0} & u
+  ) \\
+  &= \mqty(
+    0 & 0 & 0 \\
+    \eta - u^2 & 2u & 0 \\
+    -uv & v - \frac{(h_s)_x}{K} & u
+  ).
+\end{align}
+
+The full source terms are then:
+
+\begin{align}
+  \vb s' - \vb A' \eq{\vb q}_x
+  &= \mqty(0 \\ -\eta B_x + K \chi \\ - K h u) - \mqty(
+    0 & 0 & 0 \\
+    \eta - u^2 & 2u & 0 \\
+    -uv & v - \frac{(h_s)_x}{K} & u
+  ) \vdot \mqty(h_0 \\ 0 \\ (hv)_0)_x \\
+  &= \mqty(0 \\ -\eta B_x + K \chi \\ - K h u) - \mqty(
+    0 \\
+    (\eta - u^2)(h_0)_x \\
+    -uv(h_0)_x + u((hv)_0)_x
+  ) \\
+  &= \mqty(0 \\ -\eta B_x + K \chi \\ - K h u) - \mqty(
+    0 \\
+    (\eta - u^2)((h_s)_x - B_x) \\
+    -uv(h_0)_x + u((hv)_0)_x
+  ) \\
+  &= \mqty(0 \\ -\eta (h_s)_x + K \chi + u^2 (h_0)_x \\ - K h u +uv(h_0)_x - u((hv)_0)_x)
+\end{align}
+
+Note that $(h_0)_x$ and $((hv)_0)_x$ could be further expanded in terms of $h_s$, $B$ and $K$, but no further useful cancellations will occur, so it is generally easier and more accurate to implement the method based on discrete versions of the equilibrium quantities themselves.
+
+It should also be noted that one recovers this still water solver from the previous section by setting $h_0 = 1$.
+
+Another important point is that for uniform background flow $KhU$ cannot simply be added before going through these steps (which would yield a $K\eta U$ term in $hv$-equation), as the chosen states are no longer equilibria of the modified system. It appears that a correct (i.e. converging) method is obtained by simply adding the full $KhU$ term to the balanced solver, but the author has not been able to find a theoretical justification for this. However, in general, it is probably not desirable to use a geostrophic equilibrium solver for uniform background in the first place, as the system will never be near the chosen equilibrium. It would instead be more useful to derive separate solvers based on the steady subcritical, transcritical or supercritical flow to be used with these systems. For an overview of the phase space of steady rotating flow over a ridge, see \citet{esler2005steady}.
