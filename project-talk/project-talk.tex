@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[handout]{beamer}
 
 \usepackage{graphicx}
 
@@ -55,7 +55,7 @@
   \pause\pause
   \begin{align}
                            h_t + (hu)_x & = 0 \\
-    (hu)_t + \qty(hu^2 + \frac{1}{2}gh^2)_x & = 0 \\
+    (hu)_t + \qty(hu^2 + \frac{1}{2}h^2)_x & = 0 \\
                        (hv)_t + (huv)_x & = 0
   \end{align}
 \end{frame}
@@ -69,9 +69,9 @@
     \end{equation}
     \item Discretisation:\\ \vspace{0.2cm}
     \begin{center}
-      \includegraphics<1>[width=0.5\textwidth]{img/discr1}
-      \includegraphics<2>[width=0.5\textwidth]{img/discr2}
-      \includegraphics<3>[width=0.5\textwidth]{img/discr3}
+      \includegraphics<1| handout:0>[width=0.5\textwidth]{img/discr1}
+      \includegraphics<2| handout:0>[width=0.5\textwidth]{img/discr2}
+      \includegraphics<3| handout:0>[width=0.5\textwidth]{img/discr3}
       \includegraphics<4>[width=0.5\textwidth]{img/discr4}
   \end{center}
   \end{itemize}
@@ -80,7 +80,7 @@
 \begin{frame}
   \frametitle{Riemann Problems}
   \begin{center}
-    \includegraphics<1>[width=0.9\textwidth]{img/riemann1}
+    \includegraphics<1| handout:0>[width=0.9\textwidth]{img/riemann1}
     \includegraphics<2->[width=0.9\textwidth]{img/riemann2}
   \end{center}
   \begin{itemize}
@@ -91,24 +91,11 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Godunov's Method}
-  \begin{itemize}
-    \item Wave propagation form:
-      \begin{equation}
-        Q_i^{n+1} = Q_i^n - \frac{\Delta t}{\Delta x} (\mathcal{A}^+ \Delta Q_{i-1/2} + \mathcal{A}^- \Delta Q_{i+1/2})
-      \end{equation}
-      \pause
-      \begin{align}
-        \mathcal{A}^- \Delta Q_{i-1/2} &= \sum_{p=1}^{M_w} (s_{i-1/2}^p)^-\mathcal{W}_{i-1/2}^p \\
-        \mathcal{A}^+ \Delta Q_{i+1/2} &= \sum_{p=1}^{M_w} (s_{i+1/2}^p)^+\mathcal{W}_{i+1/2}^p
-      \end{align}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
   \frametitle{Implementation: Clawpack}
   \begin{itemize}
     \item ``\textbf{C}onservation \textbf{law} \textbf{pack}age'', by Randall J. LeVeque, 1994
+    \pause
+    \item Implements ``Godunov's method'' in \emph{wave-propagation form}
     \pause
     \item Riemann solvers in Fortran 90
     \begin{itemize}
@@ -131,7 +118,7 @@
   \item Modelling additional effects:
   \begin{align}
                            h_t + (hu)_x & = 0 \hspace{0.25\textwidth}\\
-    (hu)_t + \qty(hu^2 + \frac{1}{2}gh^2)_x & = \alt<3->{-hB_x+Khv}{\alt<2>{-hB_x}{0}} \\
+    (hu)_t + \qty(hu^2 + \frac{1}{2}h^2)_x & = \alt<3->{-hB_x+Khv}{\alt<2>{-hB_x}{0}} \\
                        (hv)_t + (huv)_x & = \alt<3->{-Khu}{0}
   \end{align}
     \item<4-> Full form of conservation law:
@@ -151,7 +138,7 @@
     \end{align}
     \item<2-> The still water system:\\
     \begin{center}
-      \includegraphics<2>[width=0.65\textwidth]{img/bathymetry1}
+      \includegraphics<2| handout:0>[width=0.65\textwidth]{img/bathymetry1}
       \includegraphics<3>[width=0.65\textwidth]{img/bathymetry2}
     \end{center}
   \end{itemize}
@@ -180,7 +167,7 @@
     \item LeVeque, 1998, ``Balancing Source Terms and Flux Gradients in High-Resolution Godunov Methods: The Quasi-Steady Wave-Propagation Algorithm''
     \vspace{0.5cm}
     \begin{center}
-      \includegraphics<2>[width=0.5\textwidth]{img/leveque-splitting1}
+      \includegraphics<2| handout:0>[width=0.5\textwidth]{img/leveque-splitting1}
       \includegraphics<3->[width=0.5\textwidth]{img/leveque-splitting2}
     \end{center}
     \vspace{0.5cm}
@@ -189,27 +176,6 @@
         \vb f(Q_i^+) - \vb f(Q_i^-) = \vb s(Q_i, x_i) \Delta x
       \end{equation}
     }
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Well-Balanced Methods}
-  \framesubtitle{LeVeque}
-  \begin{itemize}
-    \item Method originally developed for bathymetry term
-    \pause
-    \item Derived analogous method including Coriolis terms
-    \pause
-    \item Pro:
-    \begin{itemize}
-      \item Well-balanced for all equilibria
-    \end{itemize}
-    \pause
-    \item Con:
-    \begin{itemize}
-      \item Requires solving cubic for offset
-      \item Problematic away from equilibrium (transcritical flow)
-    \end{itemize}
   \end{itemize}
 \end{frame}
 
@@ -249,41 +215,26 @@
     \begin{equation}
       \vb q^*_t + \vb f'(\vb q) \vb q^*_x = \vb s^* - \pdv{\vb f^*}{\vb q_\mathrm{eq}} (\vb q_\mathrm{eq})_x
     \end{equation}
-    \item Works, but less accurate than unbalanced method
-    \pause
-    \item Again, extended original work to support Coriolis term
-    \pause
-    \item Also derived solver for geostrophic equilibria
-    \begin{itemize}
-      \item Implementation does not work yet
-    \end{itemize}
+    \item This does work!
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Well-Balanced Methods}
-  \framesubtitle{Rogers et al.}
+  \frametitle{Project work}
   \begin{itemize}
-    \item Pro:
+    \item Extend these methods the full SWEs with Coriolis force
+    \pause
+    \item Also, derived a Rogers solver for geostrophic equilibria
     \begin{itemize}
-      \item Works away from equilibrium
-      \item Fairly simple to derive and implement
+      \item Unfortunately, implementation is work in progress.
     \end{itemize}
-    \item Con:
+    \pause
+    \item Evaluation
     \begin{itemize}
-      \item Tailored to a specific equilibrium
-      \item Need to know equilibrium a priori
-      \item Less accurate than unbalanced method away from equilibrium
+      \item Implemented evaluation framework in Clawpack (Python)
+      \item Supports 7 different bathymetries and 5 initial conditions
+      \item Implemented 4 Riemann solvers in Fortran (unbalanced, LeVeque, Rogers for still water, Rogers for geostrophic equilibrium)
     \end{itemize}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Evaluation}
-  \begin{itemize}
-    \item Implemented evaluation framework in Clawpack (Python)
-    \item Supports 7 different bathymetries and 5 initial conditions
-    \item Implemented 4 Riemann solvers in Fortran (unbalanced, LeVeque, Rogers for still water, Rogers for geostrophic equilibrium)
   \end{itemize}
 \end{frame}
 
@@ -292,40 +243,152 @@
   \framesubtitle{Still water}
   \begin{center}
     \includegraphics[width=0.45\textwidth]{../results/still-cosine-initial.png}
-    \includegraphics<1>[width=0.45\textwidth]{../results/still-cosine-unbalanced-01.png}
-    \includegraphics<2>[width=0.45\textwidth]{../results/still-cosine-unbalanced-02.png}
-    \includegraphics<3>[width=0.45\textwidth]{../results/still-cosine-unbalanced-03.png}
-    \includegraphics<4>[width=0.45\textwidth]{../results/still-cosine-unbalanced-04.png}
-    \includegraphics<5>[width=0.45\textwidth]{../results/still-cosine-unbalanced-05.png}
-    \includegraphics<6>[width=0.45\textwidth]{../results/still-cosine-unbalanced-06.png}
-    \includegraphics<7>[width=0.45\textwidth]{../results/still-cosine-unbalanced-07.png}
-    \includegraphics<8>[width=0.45\textwidth]{../results/still-cosine-unbalanced-08.png}
-    \includegraphics<9>[width=0.45\textwidth]{../results/still-cosine-unbalanced-09.png}
-    \includegraphics<10>[width=0.45\textwidth]{../results/still-cosine-unbalanced-10.png}
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/still-cosine-unbalanced-10.png}
     \includegraphics<11>[width=0.45\textwidth]{../results/still-cosine-unbalanced-11.png} \\
-    \includegraphics<1>[width=0.45\textwidth]{../results/still-cosine-rogers-01.png}
-    \includegraphics<2>[width=0.45\textwidth]{../results/still-cosine-rogers-02.png}
-    \includegraphics<3>[width=0.45\textwidth]{../results/still-cosine-rogers-03.png}
-    \includegraphics<4>[width=0.45\textwidth]{../results/still-cosine-rogers-04.png}
-    \includegraphics<5>[width=0.45\textwidth]{../results/still-cosine-rogers-05.png}
-    \includegraphics<6>[width=0.45\textwidth]{../results/still-cosine-rogers-06.png}
-    \includegraphics<7>[width=0.45\textwidth]{../results/still-cosine-rogers-07.png}
-    \includegraphics<8>[width=0.45\textwidth]{../results/still-cosine-rogers-08.png}
-    \includegraphics<9>[width=0.45\textwidth]{../results/still-cosine-rogers-09.png}
-    \includegraphics<10>[width=0.45\textwidth]{../results/still-cosine-rogers-10.png}
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/still-cosine-rogers-10.png}
     \includegraphics<11>[width=0.45\textwidth]{../results/still-cosine-rogers-11.png}
-    \includegraphics<1>[width=0.45\textwidth]{../results/still-cosine-leveque-01.png}
-    \includegraphics<2>[width=0.45\textwidth]{../results/still-cosine-leveque-02.png}
-    \includegraphics<3>[width=0.45\textwidth]{../results/still-cosine-leveque-03.png}
-    \includegraphics<4>[width=0.45\textwidth]{../results/still-cosine-leveque-04.png}
-    \includegraphics<5>[width=0.45\textwidth]{../results/still-cosine-leveque-05.png}
-    \includegraphics<6>[width=0.45\textwidth]{../results/still-cosine-leveque-06.png}
-    \includegraphics<7>[width=0.45\textwidth]{../results/still-cosine-leveque-07.png}
-    \includegraphics<8>[width=0.45\textwidth]{../results/still-cosine-leveque-08.png}
-    \includegraphics<9>[width=0.45\textwidth]{../results/still-cosine-leveque-09.png}
-    \includegraphics<10>[width=0.45\textwidth]{../results/still-cosine-leveque-10.png}
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/still-cosine-leveque-10.png}
     \includegraphics<11>[width=0.45\textwidth]{../results/still-cosine-leveque-11.png} \\
   \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Results}
+  \framesubtitle{Geostrophic equilibrium}
+  \begin{center}
+    \includegraphics[width=0.45\textwidth]{../results/geo-flat-initial.png}
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/geo-flat-unbalanced-10.png}
+    \includegraphics<11>[width=0.45\textwidth]{../results/geo-flat-unbalanced-11.png} \\
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/geo-flat-rogers-10.png}
+    \includegraphics<11>[width=0.45\textwidth]{../results/geo-flat-rogers-11.png}
+    \includegraphics<1| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-01.png}
+    \includegraphics<2| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-02.png}
+    \includegraphics<3| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-03.png}
+    \includegraphics<4| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-04.png}
+    \includegraphics<5| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-05.png}
+    \includegraphics<6| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-06.png}
+    \includegraphics<7| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-07.png}
+    \includegraphics<8| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-08.png}
+    \includegraphics<9| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-09.png}
+    \includegraphics<10| handout:0>[width=0.45\textwidth]{../results/geo-flat-leveque-10.png}
+    \includegraphics<11>[width=0.45\textwidth]{../results/geo-flat-leveque-11.png} \\
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusions}
+  \begin{itemize}
+    \item LeVeque solver
+    \begin{itemize}
+      \item Pro:
+      \begin{itemize}
+        \item Well-balanced for all equilibria
+      \end{itemize}
+      \item Con:
+      \begin{itemize}
+        \item Requires solving cubic for offset
+        \item Problematic away from equilibrium (transcritical flow)
+      \end{itemize}
+    \end{itemize}
+    \pause
+    \item Rogers solver
+    \begin{itemize}
+      \item Pro:
+      \begin{itemize}
+        \item Works away from equilibrium
+        \item Fairly simple to derive and implement
+      \end{itemize}
+      \item Con:
+      \begin{itemize}
+        \item Tailored to a specific equilibrium
+        \item Less accurate than unbalanced method away from equilibrium
+      \end{itemize}
+    \end{itemize}
+    \pause
+    \item There is no free lunch!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Further work}
+  \begin{itemize}
+    \item What's left?
+    \begin{itemize}
+      \item Fix the bathymetry discretisation for LeVeque solver.
+      \item Get Rogers solver working for geostrophic equilibrium.
+    \end{itemize}
+    \pause
+    \item Future research
+    \begin{itemize}
+      \item Allow for dry states
+      \item Look at non-Godunov type methods (Chertock et al., 2014, ``Well-Balanced Schemes for the Shallow Water Equations with Coriolis Forces'')
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \LARGE Questions?
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Godunov's Method}
+  \begin{itemize}
+    \item Wave propagation form:
+      \begin{equation}
+        Q_i^{n+1} = Q_i^n - \frac{\Delta t}{\Delta x} (\mathcal{A}^+ \Delta Q_{i-1/2} + \mathcal{A}^- \Delta Q_{i+1/2})
+      \end{equation}
+      \begin{align}
+        \mathcal{A}^- \Delta Q_{i-1/2} &= \sum_{p=1}^{M_w} (s_{i-1/2}^p)^-\mathcal{W}_{i-1/2}^p \\
+        \mathcal{A}^+ \Delta Q_{i+1/2} &= \sum_{p=1}^{M_w} (s_{i+1/2}^p)^+\mathcal{W}_{i+1/2}^p
+      \end{align}
+  \end{itemize}
 \end{frame}
 
 \addcontentsline{toc}{chapter}{Bibliography}

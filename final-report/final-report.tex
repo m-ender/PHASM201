@@ -7,6 +7,14 @@
 \onehalfspace
 
 \usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{listings}
+
+\lstset{ %
+  basicstyle=\footnotesize\ttfamily %
+}
 
 \usepackage[utf8]{inputenc}
 \usepackage[hyphens]{url}
@@ -20,6 +28,7 @@
 
 \frenchspacing
 %\renewcommand{\thefootnote}{\alph{footnote}}
+\hyphenation{LeVeque}
 
 \begingroup
 \lccode`\~=`\ %
@@ -34,6 +43,8 @@
   (\arabic{word} words)%
   \end{flushright}%
 }
+
+\newcommand{\eq}[1]{#1^\mathrm{eq}}
 
 \title{Accurate methods for computing rotation-dominated flows }
 
@@ -53,6 +64,10 @@
 \include{content/ch_implementation}
 \include{content/ch_results}
 \include{content/ch_conclusion}
+
+\appendix
+
+\include{content/ap_rogers}
 
 
 \addcontentsline{toc}{chapter}{Bibliography}

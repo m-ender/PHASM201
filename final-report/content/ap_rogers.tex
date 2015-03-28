@@ -1,0 +1,35 @@
+%!TEX root = ../final-report.tex
+\chapter{Notes on method by Rogers et al.}
+\label{ap:rogers}
+
+In this report, the derivation of balanced solvers based on \citet{rogers2003mathematical} has been presented differently from what Rogers et al. have shown in their paper, and subsequently the result has been a different method.
+
+The author initially attempted to implement the method as given in the paper, but this computed unphysical flows when the system was not in equilibrium, whereas the methods based on the author's theory do converge.
+
+The discrepancy arises in the manipulation of Eq.~\ref{eq:rogers_discr}. Rogers at al. apply the chain rule directly to the $(\vb f(\vb q) - \vb f(\eq{\vb q}))_x$ term, obtaining $\pdv{\vb f'}{\vb q'}\vb q'_x$. Subsequently, they show that this deviatoric flux Jacobian is identical to the unmodified flux Jacobian $\vb A = \pdv{\vb f}{\vb q}$, obtaining the method
+
+\begin{equation}
+  \vb q'_t + \vb A \vb q'_x = \vb s'
+\end{equation}
+
+which differs from the author's method by the term $ - \vb A' \eq{\vb q}_x$ on the right-hand side.
+
+While the result $\pdv{\vb f'}{\vb q'} = \pdv{\vb f}{\vb q}$ is undoubtedly correct, the first step seems to assume that $\vb f' = \vb f(\vb q) - \vb f(\eq{\vb q})$ is a function of $\vb q' = \vb q - \eq{\vb q}$ only --- otherwise the chain rule would yield additional terms. It is not obvious why this should be the case, such that there is no dependence on $\eq{\vb q}$ as well. This would be the most general case, since $\vb q$ itself can be decomposed into $\vb q'$ and $\eq{\vb q}$.
+
+One can also go through this derivation without discarding this additional dependence:
+
+\begin{align}
+  \vb q'_t + \vb f'_x &= \vb s' \\
+  \vb q'_t + \pdv{\vb f'}{\vb q'} \vb q'_x + \pdv{\vb f'}{\eq{\vb q}} \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x + \qty(\pdv{\vb f(\vb q)}{\eq{\vb q}} - \pdv{\vb f(\eq{\vb q})}{\eq{\vb q}}) \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x + \qty(\pdv{\vb f(\vb q)}{\vb q}\pdv{\vb q}{\eq{\vb q}} - \pdv{\vb f(\eq{\vb q})}{\eq{\vb q}}) \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x + \qty(\pdv{\vb f(\vb q)}{\vb q} - \pdv{\vb f(\eq{\vb q})}{\eq{\vb q}}) \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x + \qty(\vb A - \eq{\vb A}) \eq{\vb q}_x &= \vb s' \\
+  \vb q'_t + \vb A \vb q'_x &= \vb s' - \vb A' \eq{\vb q}_x,
+\end{align}
+
+where the results $\pdv{\vb f'}{\vb q'} = \pdv{\vb f}{\vb q}$ and $\pdv{\vb q}{\eq{\vb q}} = 1$ have been used. This gives the same result as Eq.~\ref{eq:rogers_method}, including the additional source term.
+
+The author has contacted Benedict Rogers and Alistair Borthwick about this discrepancy. However, while both of them replied very kindly, they do not seem to have addressed the problem with a justification for the initial manipulation --- from (3.9) to (3.10) in their paper.
+
+However, Rogers at al. have obtained good results with their method, so it seems likely that there is simply a different underlying assumption in author's work than in theirs, which is accounted for by the additional source term. This should certainly be investigated further.

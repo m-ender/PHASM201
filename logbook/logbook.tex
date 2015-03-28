@@ -153,7 +153,7 @@ I tried naively applying their results to the wave-propagation method, but the s
 
 \subsubsection*{24 February 2015}
 
-We were not able to resolve the discrepancies I found in the Rogers paper yesterday. Instead, I worked through the derivation from scratch and ended up with two additional source terms. Using these in the numerical method actually seems to give a correct method (the qualitative result is the same, and as I increase the resolution the solutions of this method and the unbalanced method converge, but that \tilde100 cells there are noticeable differences). I have written up my alternative derivation, in case I'll need to use it in the final report, and I've decided to email the corresponding author Prof. Borthwick about this. Maybe I've overlooked something and he can clear up the issue.
+We were not able to resolve the discrepancies I found in the Rogers paper yesterday. Instead, I worked through the derivation from scratch and ended up with two additional source terms. Using these in the numerical method actually seems to give a correct method (the qualitative result is the same, and as I increase the resolution the solutions of this method and the unbalanced method converge, but that $\sim 100$ cells there are noticeable differences). I have written up my alternative derivation, in case I'll need to use it in the final report, and I've decided to email the corresponding author Prof. Borthwick about this. Maybe I've overlooked something and he can clear up the issue.
 
 \subsubsection*{1 March 2015}
 
@@ -171,7 +171,13 @@ I've also noticed something odd with the still-water Rogers solver: in steady fl
 
 Still no reply from Rogers and Borthwick.
 
-While working on the presentation, I have noticed a discrepancy between the LeVeque paper and my implementation, which may be the reason why my implementation isn't perfectly well-balanced: LeVeque uses bathymetry specified at cell boundaries, and computes the initial water depth based on the average bathymetry in that cell. This leads to adjacent $h^+$ and $h^-$ values being identical. I think using bathymetry specified at the cell centres may not simply not work for this method.
+While working on the presentation, I have noticed a discrepancy between the LeVeque paper and my implementation, which may be the reason why my implementation isn't perfectly well-balanced: LeVeque uses bathymetry specified at cell boundaries, and computes the initial water depth based on the average bathymetry in that cell. This leads to adjacent $h^+$ and $h^-$ values being identical. I think using bathymetry specified at the cell centres may simply not work for this method.
+
+\subsubsection*{20 March 2015}
+
+Changing the discretisation of the bathymetry to edge-centred values did indeed work, and make the method perfectly well-balanced for still water equilibria. More importantly, I also changed the discretisation of the initial surface profile for geostrophic equilibria. Now the adapted method also preserves arbitrary geostrophic equilibria perfectly.
+
+I will try finishing up the report now and if I've got some time left then I'll try getting the Rogers solver for geostrophic equilibria working as well.
 
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
