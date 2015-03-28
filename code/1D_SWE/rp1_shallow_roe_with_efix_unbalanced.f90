@@ -40,6 +40,8 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     dimension wave(meqn,   mwaves, 1-mbc:maxmx+mbc)
     dimension amdq(meqn,           1-mbc:maxmx+mbc)
     dimension apdq(meqn,           1-mbc:maxmx+mbc)
+    dimension auxl(1,              1-mbc:maxmx+mbc)
+    dimension auxr(1,              1-mbc:maxmx+mbc)
 
 !     # Local storage
 !     ---------------
@@ -219,6 +221,3 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     900 continue
     return
     end subroutine rp1
-
-
-
