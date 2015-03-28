@@ -45,8 +45,8 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     dimension wave(meqn,   mwaves, 1-mbc:maxmx+mbc)
     dimension amdq(meqn,           1-mbc:maxmx+mbc)
     dimension apdq(meqn,           1-mbc:maxmx+mbc)
-    dimension auxl(1,              1-mbc:maxmx+mbc)
-    dimension auxr(1,              1-mbc:maxmx+mbc)
+    dimension auxl(2,              1-mbc:maxmx+mbc)
+    dimension auxr(2,              1-mbc:maxmx+mbc)
 
 !     # Local storage
 !     ---------------
@@ -72,13 +72,13 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
 
         if (newton) then
     !       # delta h for the case hu=0:
-            delh = 0.5d0*(-DB + K*hv/h)*dx
+            delh = 0.5d0*(-DB + K*hv/h*dx)
 
     !       # Newton iteration to improve delh:
             do 5 iter=1,5
                 hp = ql(1,i) + delh
                 hm = ql(1,i) - delh
-                F = hu*hu*(1.d0/hp - 1.d0/hm) + 2.0d0 * delh * ql(1,i) + (h*DB - K*hv)*dx
+                F = hu*hu*(1.d0/hp - 1.d0/hm) + 2.0d0 * delh * ql(1,i) + (h*DB - K*hv*dx)
                 Fprime = -hu*hu*(1.d0/hp**2 + 1.d0/hm**2) + 2.0d0 * ql(1,i)
                 dnewton = F/Fprime
                 delh = delh - dnewton
@@ -94,10 +94,10 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
 
     !       # delta h for the case hu=0:
             if (dabs(hu) < 1d-10) then
-                delh = 0.5d0*(-DB + K*hv/h)*dx
+                delh = 0.5d0*(-DB + K*hv/h*dx)
             else
                 a = - 2 * h
-                b = (- h * DB + K*hv)*dx
+                b = (- h * DB + K*hv*dx)
                 c = 2*(h**3 - hu**2)
                 d = -h*h*b
 
@@ -332,6 +332,3 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     900 continue
     return
     end subroutine rp1
-
-
-

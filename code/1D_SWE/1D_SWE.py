@@ -62,8 +62,10 @@ with open('pyclaw.data') as config:
 # TODO: Can we store this somewhere in the Clawpack state?
 B = np.zeros(Resolution)
 Bx = np.zeros(Resolution)
+DB = np.zeros(Resolution)
 B_ghost = np.zeros(Resolution+4)
 Bx_ghost = np.zeros(Resolution+4)
+DB_ghost = np.zeros(Resolution+4)
 
 hs = np.zeros(Resolution)
 hsx = np.zeros(Resolution)
@@ -82,6 +84,9 @@ def qinit(state,x_min,x_max,dx):
 
     xc_ghost = state.grid.c_centers_with_ghost(2)[0]
     xc = state.grid.x.centers
+
+    xe_ghost = state.grid.c_edges_with_ghost(2)[0]
+    xe = state.grid.x.edges
 
     if Scenario == 'STILL_LAKE':
         hs_ghost = 0*xc_ghost + 1.0
@@ -132,8 +137,9 @@ def qinit(state,x_min,x_max,dx):
         state.q[2,:] = hl*vl + (hr*vr-hl*vl) * (xc > -0.2) * (xc < 0.2)
 
     elif Scenario == 'GEOSTROPHIC':
-        hs_ghost = 1.0 + 0.5*np.exp(-128*xc_ghost*xc_ghost)
-        hsx_ghost = np.gradient(hs_ghost, dx)
+        hs_edges = 1.0 + 0.5*np.exp(-128*xe_ghost*xe_ghost)
+        hs_ghost = (hs_edges[:-1]+hs_edges[1:])/2
+        hsx_ghost = (hs_edges[1:]-hs_edges[:-1])/dx
 
         hv0_ghost = hsx_ghost*(hs_ghost - B_ghost) / K
 
@@ -142,8 +148,9 @@ def qinit(state,x_min,x_max,dx):
         state.q[2,:] = hv0_ghost[2:-2]
 
     elif Scenario == 'GEO_WAVE':
-        hs_ghost = 1.0 + 0.5*np.exp(-128*xc_ghost*xc_ghost)
-        hsx_ghost = np.gradient(hs_ghost, dx)
+        hs_edges = 1.0 + 0.5*np.exp(-128*xe_ghost*xe_ghost)
+        hs_ghost = (hs_edges[:-1]+hs_edges[1:])/2
+        hsx_ghost = (hs_edges[1:]-hs_edges[:-1])/dx
 
         hv0_ghost = hsx_ghost*(hs_ghost - B_ghost) / K
 
@@ -164,7 +171,7 @@ def qinit(state,x_min,x_max,dx):
         state.q[2,:] = hv0
 
     if Solver == 'ROGERS':
-        hs_ghost = 0*xc + 1.0
+        #hs_ghost = 0*xc_ghost + 1.0
         state.q[0,:] -= (1.0 - B)
     elif Solver == 'ROGERS_GEO':
         state.q[0,:] -= (hs_ghost[2:-2] - B)
@@ -180,27 +187,31 @@ def qinit(state,x_min,x_max,dx):
 
 
 def init_topo(state,x_min,x_max,dx):
-    xc = state.grid.c_centers_with_ghost(2)[0]
+    xc = state.grid.c_edges_with_ghost(2)[0]
 
-    global B, Bx, B_ghost, Bx_ghost
+    B_edges = np.zeros(Resolution+5)
+    global B, Bx, DB, B_ghost, Bx_ghost, DB_ghost
     if Bathymetry == 'FLAT':
-        B_ghost = 0*xc
+        B_edges = 0*xc
     elif Bathymetry == 'SLOPE':
-        B_ghost = 0.4 + 0.8*xc
+        B_edges = 0.4 + 0.8*xc
     elif Bathymetry == 'GAUSSIAN':
-        B_ghost = 0.5*np.exp(-128*xc*xc)
+        B_edges = 0.5*np.exp(-128*xc*xc)
     elif Bathymetry == 'COSINE':
-        B_ghost = 0.5*np.cos(np.pi*xc*4)**2 * (xc > -0.125) * (xc < 0.125)
+        B_edges = 0.5*np.cos(np.pi*xc*4)**2 * (xc > -0.125) * (xc < 0.125)
     elif Bathymetry == 'PARABOLIC_HUMP':
-        B_ghost = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
+        B_edges = (0.5 - 32.0*xc*xc)*(xc > -0.125)*(xc < 0.125)
     elif Bathymetry == 'PARABOLIC_BOWL':
-        B_ghost = 2.0 * xc*xc
+        B_edges = 2.0 * xc*xc
     elif Bathymetry == 'CLIFF':
-        B_ghost = (np.tanh(100*xc)+1)/4
+        B_edges = (np.tanh(100*xc)+1)/4
 
+    B_ghost = (B_edges[:-1]+B_edges[1:])/2
+    DB_ghost = (B_edges[1:]-B_edges[:-1])
     Bx_ghost = np.gradient(B_ghost, dx)
     B = B_ghost[2:-2]
     Bx = Bx_ghost[2:-2]
+    DB = DB_ghost[2:-2]
 
 def step_source(solver,state,dt):
     """
@@ -324,20 +335,22 @@ def qbc_source_split_lower(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,i] = qbc[:,num_ghost]
         # Fix height individually
-        #qbc[0,i] += B[num_ghost] - B[i]
+        if Solver == "UNBALANCED" or Solver == "LEVEQUE":
+            qbc[0,i] += B[num_ghost] - B[i]
 
 
 def qbc_source_split_upper(state,dim,t,qbc,auxbc,num_ghost):
     for i in range(num_ghost):
         qbc[:,-1-i] = qbc[:,-1-num_ghost]
         # Fix height individually
-        #qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
+        if Solver == "UNBALANCED" or Solver == "LEVEQUE":
+            qbc[0,-1-i] += B[-1-num_ghost] - B[-1-i]
 
 def auxbc_bathymetry_lower(state,dim,t,qbc,auxbc,num_ghost):
-    auxbc[0,:num_ghost] = Bx_ghost[:num_ghost]
+    auxbc[0,:num_ghost] = DB_ghost[:num_ghost]
 
 def auxbc_bathymetry_upper(state,dim,t,qbc,auxbc,num_ghost):
-    auxbc[0,-num_ghost:] = Bx_ghost[-num_ghost:]
+    auxbc[0,-num_ghost:] = DB_ghost[-num_ghost:]
 
 def auxbc_eql_depth_lower(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,:num_ghost] = 1 - B_ghost[:num_ghost]
@@ -347,11 +360,21 @@ def auxbc_eql_depth_upper(state,dim,t,qbc,auxbc,num_ghost):
 
 def auxbc_eql_geo_lower(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,:num_ghost] = hs_ghost[:num_ghost] - B_ghost[:num_ghost]
-    auxbc[0,:num_ghost] = hv0_ghost[:num_ghost]
+    auxbc[1,:num_ghost] = hv0_ghost[:num_ghost]
 
 def auxbc_eql_geo_upper(state,dim,t,qbc,auxbc,num_ghost):
     auxbc[0,-num_ghost:] = hs_ghost[-num_ghost:] - B_ghost[-num_ghost:]
-    auxbc[0,-num_ghost:] = hv0_ghost[-num_ghost:]
+    auxbc[1,-num_ghost:] = hv0_ghost[-num_ghost:]
+
+def setaux_unbalanced(num_ghost,mx,xlower,dxc,maux,aux):
+    #    aux[0,i]  = bathymetry gradient
+
+    if "_aux" not in setaux_unbalanced.__dict__:
+        setaux_unbalanced._aux = np.empty(aux.shape)
+
+        setaux_unbalanced._aux[0,:] = B_ghost
+
+    aux[:,:] = np.copy(setaux_unbalanced._aux)
 
 def setaux_bathymetry(num_ghost,mx,xlower,dxc,maux,aux):
     #    aux[0,i]  = bathymetry gradient
@@ -359,7 +382,8 @@ def setaux_bathymetry(num_ghost,mx,xlower,dxc,maux,aux):
     if "_aux" not in setaux_bathymetry.__dict__:
         setaux_bathymetry._aux = np.empty(aux.shape)
 
-        setaux_bathymetry._aux[0,:] = Bx_ghost
+        setaux_bathymetry._aux[0,:] = DB_ghost
+        setaux_bathymetry._aux[1,:] = B_ghost
 
     aux[:,:] = np.copy(setaux_bathymetry._aux)
 
@@ -370,6 +394,7 @@ def setaux_eql_depth(num_ghost,mx,xlower,dxc,maux,aux):
         setaux_eql_depth._aux = np.empty(aux.shape)
 
         setaux_eql_depth._aux[0,:] = (1.0 - B_ghost)
+        setaux_eql_depth._aux[1,:] = B_ghost
 
     aux[:,:] = np.copy(setaux_eql_depth._aux)
 
@@ -382,6 +407,7 @@ def setaux_eql_geo(num_ghost,mx,xlower,dxc,maux,aux):
 
         setaux_eql_geo._aux[0,:] = (hs_ghost - B_ghost)
         setaux_eql_geo._aux[1,:] = hv0_ghost
+        setaux_eql_geo._aux[2,:] = B_ghost
 
     aux[:,:] = np.copy(setaux_eql_geo._aux)
 
@@ -423,7 +449,10 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     solver.aux_bc_lower[0] = pyclaw.BC.custom
     solver.aux_bc_upper[0] = pyclaw.BC.custom
-    if Solver == 'LEVEQUE':
+    if Solver == 'UNBALANCED':
+        solver.aux_bc_lower[0] = pyclaw.BC.extrap
+        solver.aux_bc_upper[0] = pyclaw.BC.extrap
+    elif Solver == 'LEVEQUE':
         solver.user_aux_bc_lower = auxbc_bathymetry_lower
         solver.user_aux_bc_upper = auxbc_bathymetry_upper
     elif Solver == 'ROGERS':
@@ -445,24 +474,14 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
     num_eqn = 3
 
     num_aux = {
-        "UNBALANCED": 0,
-        "LEVEQUE": 1,
-        "ROGERS": 1,
-        "ROGERS_GEO": 2,
+        "UNBALANCED": 1,
+        "LEVEQUE": 2,
+        "ROGERS": 2,
+        "ROGERS_GEO": 3,
     }[Solver]
     state = pyclaw.State(domain,num_eqn, num_aux)
 
     init_topo(state, xlower, xupper, dx)
-
-    if num_aux > 0:
-        auxtmp = np.ndarray(shape=(num_aux,mx+2*num_ghost), dtype=float, order='F')
-        if Solver == "LEVEQUE":
-            setaux_bathymetry(num_ghost,mx,xlower,dx,num_aux,auxtmp)
-        elif Solver == "ROGERS":
-            setaux_eql_depth(num_ghost,mx,xlower,dx,num_aux,auxtmp)
-        elif Solver == "ROGERS_GEO":
-            setaux_eql_geo(num_ghost,mx,xlower,dx,num_aux,auxtmp)
-        state.aux[:,:] = auxtmp[:,num_ghost:-num_ghost]
 
     state.problem_data['grav'] = 1.0
     state.problem_data['k'] = K
@@ -471,10 +490,23 @@ def setup(use_petsc=False,kernel_language='Fortran',outdir='./_output',solver_ty
 
     qinit(state, xlower, xupper, dx)
 
+    if num_aux > 0:
+        auxtmp = np.ndarray(shape=(num_aux,mx+2*num_ghost), dtype=float, order='F')
+        if Solver == "UNBALANCED":
+            setaux_unbalanced(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "LEVEQUE":
+            setaux_bathymetry(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "ROGERS":
+            setaux_eql_depth(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        elif Solver == "ROGERS_GEO":
+            setaux_eql_geo(num_ghost,mx,xlower,dx,num_aux,auxtmp)
+        state.aux[:,:] = auxtmp[:,num_ghost:-num_ghost]
+
     claw = pyclaw.Controller()
     claw.keep_copy = True
     claw.output_style = 2
     claw.out_times = np.linspace(T0,T,NPlots+1)
+    claw.write_aux_init = True
     claw.tfinal = T
     claw.solution = pyclaw.Solution(state,domain)
     claw.solver = solver
@@ -495,7 +527,7 @@ def setplot(plotdata):
     plotdata.clearfigures()  # clear any old figures,axes,items data
 
     # Figure for Surface Level and Potential Vorticity
-    plotfigure = plotdata.new_plotfigure(name='Rogers solver', figno=0)
+    plotfigure = plotdata.new_plotfigure(name='Surface level', figno=0)
 
     # Set up for axes in this figure:
     plotaxes = plotfigure.new_plotaxes()
@@ -509,8 +541,11 @@ def setplot(plotdata):
         "STEADY_FLOW": 1.7,
     }[Scenario]
     plotaxes.ylimits = [0.0,max_h]
-    plotaxes.ylimits = [0.95,1.05]
-    plotaxes.title = 'Rogers solver'
+    #plotaxes.ylimits = [0.95,1.05]
+    if Scenario == "GEOSTROPHIC" or Scenario == "GEO_WAVE":
+        plotaxes.ylimits = [-0.05,0.05]
+
+    plotaxes.title = 'Surface level'
     #plotaxes.axescmd = 'subplot(211)'
 
     # Set up for items on these axes:
@@ -522,27 +557,32 @@ def setplot(plotdata):
         else:
             h = current_data.q[0,:]
 
+        if (Scenario == "GEOSTROPHIC" or Scenario == "GEO_WAVE"):
+            h -= hs
+
         return h + B
+
     plotitem = plotaxes.new_plotitem(plot_type='1d')
     plotitem.plot_var = surface_level
     plotitem.plotstyle = '-'
     plotitem.color = 'b'
     plotitem.kwargs = {'linewidth':3}
 
-    def bathymetry(current_data):
-        return B
-    plotitem = plotaxes.new_plotitem(plot_type='1d')
-    plotitem.plot_var = bathymetry
-    plotitem.plotstyle = '-'
-    plotitem.color = 'g'
-    plotitem.kwargs = {'linewidth':3}
+    if not (Scenario == "GEOSTROPHIC" or Scenario == "GEO_WAVE"):
+        def bathymetry(current_data):
+            return B
+        plotitem = plotaxes.new_plotitem(plot_type='1d')
+        plotitem.plot_var = bathymetry
+        plotitem.plotstyle = '-'
+        plotitem.color = 'g'
+        plotitem.kwargs = {'linewidth':3}
 
-    # plotfigure = plotdata.new_plotfigure(name='Potential vorticity', figno=1)
-    # # Set up for axes in this figure:
-    # plotaxes = plotfigure.new_plotaxes()
-    # plotaxes.xlimits = [-0.5,0.5]
-    # plotaxes.title = 'Potential vorticity'
-    # #plotaxes.axescmd = 'subplot(212)'
+        plotfigure = plotdata.new_plotfigure(name='Potential vorticity', figno=1)
+        # Set up for axes in this figure:
+        plotaxes = plotfigure.new_plotaxes()
+        plotaxes.xlimits = [-0.5,0.5]
+        plotaxes.title = 'Potential vorticity'
+        #plotaxes.axescmd = 'subplot(212)'
 
     # # Set up for items on these axes:
     # def potential_vorticity(current_data):
