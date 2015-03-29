@@ -31,7 +31,7 @@ In order to evaluate these solvers, the author wrote a test framework based on P
   \item Solver to be tested
   \item Bathymetry profile
   \item Initial condition of the system
-  \item Number of grid cells
+  \item $N$, the number of grid cells
   \item First time level to be plotted (solving always starts at $t = 0$)
   \item Final time level to be solved and plotted
   \item Number of frames to plot
@@ -63,7 +63,7 @@ The following seven bathymetry profiles are supported:
   \item Flat: $B = 0$ everywhere.
   \item Sloped: $B = 0.4 + 0.8x$. See Fig.~\ref{fig:bath-slope}.
   \item Gaussian ridge: $B = \frac{1}{2} \exp (-128 x^2)$. See Fig.~\ref{fig:bath-gaussian}.
-  \item Cosine ridge: $B = \frac{1}{2} \cos(4\pi x)^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-cosine}.
+  \item Cosine ridge: $B = \frac{1}{2} \cos(4\pi x)^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-cosine}. This is the bathymetry used in \citet{leveque1998balancing}.
   \item Parabolic ridge: $B = \frac{1}{2} - 32x^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-para-ridge}.
   \item Parabolic bowl: $B = 2 x^2$. See Fig.~\ref{fig:bath-para-bowl}.
   \item Cliff: $B = \frac{1}{4} (1 + \tanh (100 x))$. See Fig.~\ref{fig:bath-cliff}.
