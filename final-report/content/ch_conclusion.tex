@@ -2,16 +2,36 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-\begin{itemize}
-  \item quick recap
-  \item pros and cons of the individual methods
-  \item future work:
-  \begin{itemize}
-    \item derive more general Rogers solver for uniform flow
-    \item what's with the growth of the still water solver for Gaussian geostrophic equilibrium?
-    \item discrepancy with Rogers
-    \item model additional effects/account for dry states
-    \item look into methods that aren't Riemann problem based
-    \item put more effort into choice of root for LeVeque solver
-  \end{itemize}
-\end{itemize}
+For the purpose of accurately modelling rotating flows in or near geostrophic balance, two approaches have been investigated, based on \citet{leveque1998balancing} and \citet{rogers2003mathematical}. After presenting an alternative form of Rogers's method (see Appendix~\ref{ap:rogers}), new solvers have been derived based on these approaches and have been shown to be indeed well-balanced for geostrophic equilibria.
+
+This chapter draws some conclusions about the advantages and disadvantages of each method and presents several avenues which could be pursued for future research.
+
+\section{LeVeque's Method}
+
+The main advantage of LeVeque's method is that solvers derived from it are automatically well-balanced for all steady states of the systems, since no information about a particular equilibrium is used in the derivation. This is particularly important if the equilibrium a system will settle into is not known a priori.
+
+On the other hand, in some cases it is not obvious how the cubic should be solved which arises in the case of the SWEs. This has been shown to be problematic when shocks form in transcritical flows, where Newton's method does not converge and an explicit formula can choose the wrong root. Furthermore, while not substantial, this method involves a certain computational overhead for solving the cubic which should be kept in mind.
+
+LeVeque's method seems to be a very good choice for complicated adjustment problems in which the final state of the system is not known up front.
+
+\section{Rogers's Method}
+
+Solvers based on this method are much easier to derive and implement and also do not necessarily incur any computational overhead. They also appear to produce very accurate results for systems near the chosen equilibrium, even at low resolutions. Furthermore, as opposed to the LeVeque solver, they can solve any system just as well as the unbalanced solver (as opposed to failing completely for some cases like transcritical flow).
+
+The main limitation of this approach is that any solver's balance is tied to a particular equilibrium. This not only means that the solver is essentially unbalanced for any other equilibrium, but it also requires the relevant equilibrium to be known a priori. Hence, this solver may not be suitable for adjustment problems where an unknown equilibrium is to be found.
+
+These solvers seem particularly well suited to initial conditions which are small perturbations about a known equilibrium. They are also very useful if an unbalanced solver is already in use due to how easy an existing solver can be adapted.
+
+\section{Future Work}
+
+The field of computational geophysical fluid dynamics in general, and the research of balanced methods in particular is very vast, and only a few very specific methods and problems could be investigated within the scope of this project. Hence, there are several interesting ways in which this work could be continued and extended.
+
+Regarding the LeVeque solver, more effort could be put into solving the cubic equation. Depending on the context of the problem it might be possible to determine the physically correct root by making use of entropy conditions or similar. This would allow the LeVeque solver to be used for arbitrary systems, even if they contain transcritical regions.
+
+For Rogers's method, it is still unclear why the author's solvers differ from the theory presented in \citet{rogers2003mathematical}, yet both the author and Rogers et al. were able to obtain good results with their methods. This should be further investigated to reconcile the discrepancies in the two derivations. Additionally, the apparently unbounded growth of the still water solver for geostrophic equilibrium found in Section~\ref{sec:results-geo} should be analysed to determine whether this is a problem of the method or its implementation.
+
+Once the theory behind this method is clarified, an even more general solver could be easily derived which could be well-balanced for equilibria with $hu \neq 0$, like the steady flows investigated in \citet{esler2005steady}.
+
+Of course, many more approaches for obtaining well-balanced solvers have been developed in the past, and some of these might be more suitable for balancing the Coriolis terms than the methods chosen in this project. Furthermore, one might investigate other numerical schemes which are not based on Riemann solvers, as \citet{chertockwell} have done in a recent paper.
+
+Apart from looking into other approaches to well-balancing, another point of interest for future research is to look at more sophisticated models. For this report only the effects of bathymetry and the Coriolis force have been considered. However, more realistic models can be obtained by adding additional source terms to account for effects like eddy viscosity, bed friction and surface stresses (i.e. wind). Similarly, the methods used in this paper have assumed $h > 0$ at all times and were not able to deal with dry states. Many of the more recent well-balanced methods do allow for dry states, so adapting these to support the Coriolis terms could yield more powerful methods.

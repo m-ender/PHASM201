@@ -6,27 +6,29 @@ This chapter presents results for the four solvers. For each of the five initial
 
 Apart from the case of uniform flow, the explicit formula has been used for the cubic that appears in the LeVeque solver.
 
+Note that, although the Rogers solver for still water systems is merely a special case of the Rogers solver for geostrophic equilibria, it is still included in the results. This is particularly important for the geostrophic equilibrium cases in which its results show how the geostrophic equilibrium solver would perform on a different equilibrium than the one chosen to balance it.
+
 \section{Still Water}
 
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-still-1}
+    \includegraphics[width=\textwidth]{diagrams/results-still-1}
     \caption{$t = 0.1$}
     \label{fig:results-still-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-still-2}
+    \includegraphics[width=\textwidth]{diagrams/results-still-2}
     \caption{$t = 0.2$}
     \label{fig:results-still-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-still-5}
+    \includegraphics[width=\textwidth]{diagrams/results-still-5}
     \caption{$t = 0.5$}
     \label{fig:results-still-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-still-10}
+    \includegraphics[width=\textwidth]{diagrams/results-still-10}
     \caption{$t = 1.0$}
     \label{fig:results-still-10}
   \end{subfigure}
@@ -45,22 +47,22 @@ It should be noted that the data for the two rogers solvers is exactly zero (sin
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-lev-1}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-lev-1}
     \caption{$t = 0.1$}
     \label{fig:results-wave-lev-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-lev-2}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-lev-2}
     \caption{$t = 0.2$}
     \label{fig:results-wave-lev-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-lev-5}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-lev-5}
     \caption{$t = 0.5$}
     \label{fig:results-wave-lev-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-lev-10}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-lev-10}
     \caption{$t = 1.0$}
     \label{fig:results-wave-lev-10}
   \end{subfigure}
@@ -71,22 +73,22 @@ It should be noted that the data for the two rogers solvers is exactly zero (sin
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-rog-1}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-rog-1}
     \caption{$t = 0.1$}
     \label{fig:results-wave-rog-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-rog-2}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-rog-2}
     \caption{$t = 0.2$}
     \label{fig:results-wave-rog-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-rog-5}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-rog-5}
     \caption{$t = 0.5$}
     \label{fig:results-wave-rog-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-wave-rog-10}
+    \includegraphics[width=\textwidth]{diagrams/results-wave-rog-10}
     \caption{$t = 1.0$}
     \label{fig:results-wave-rog-10}
   \end{subfigure}
@@ -100,27 +102,30 @@ It is notable that the unphysical waves of the balanced solver are comparable to
 
 The balanced solver are much better at approximating the real solution, and produce very good results, considering the low resolution. It is hard to compare the performance of the three balanced solvers in detail, but it seems that the LeVeque solver produces the least accurate result, whereas the Rogers solver for still water systems approximates the real solution most closely.
 
+The discrepancy between the Rogers solvers is attributed to small differences in the implementation. In theory, they should be identical if the chosen geostrophic equilibrium is just the still water case.
+
 \section{Geostrophic Equilibrium}
+\label{sec:results-geo}
 
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-1}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-1}
     \caption{$t = 0.1$}
     \label{fig:results-geo-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-2}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-2}
     \caption{$t = 0.2$}
     \label{fig:results-geo-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-5}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-5}
     \caption{$t = 0.5$}
     \label{fig:results-geo-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-10}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-10}
     \caption{$t = 1.0$}
     \label{fig:results-geo-10}
   \end{subfigure}
@@ -131,22 +136,22 @@ The balanced solver are much better at approximating the real solution, and prod
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-gauss-1}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-gauss-1}
     \caption{$t = 0.1$}
     \label{fig:results-geo-gauss-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-gauss-2}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-gauss-2}
     \caption{$t = 0.2$}
     \label{fig:results-geo-gauss-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-gauss-5}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-gauss-5}
     \caption{$t = 0.5$}
     \label{fig:results-geo-gauss-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-gauss-10}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-gauss-10}
     \caption{$t = 1.0$}
     \label{fig:results-geo-gauss-10}
   \end{subfigure}
@@ -160,29 +165,29 @@ The unbalanced solver and the Rogers solver for still water systems give identic
 
 Both the LeVeque solver and the Rogers solver for geostrophic equilibria preserve the state exactly, as desired. Note that, as in the still water case, only for the Rogers solver are the deviations exactly zero. The LeVeque solver preserves the equilibrium to machine precision.
 
-As mentioned in the previous chapter, one can also look at the balance between bathymetry and Coriolis terms by choosing the same (Gaussian) profile for bathymetry and water surface. In this case, the unbalanced, LeVeque and Rogers solver for geostrophic equilibria preserve the balance. In the case of the unbalanced solver this is due to both terms being computed in the same step and cancelling to machine precision. For the other two solvers it is simply a consequence of being able to maintain the balance of any geostrophic equilibrium. However, the Rogers solver for still water systems does not preserve this equilibrium as can be seen in Figs.~\ref{fig:results-geo-gauss}. Furthermore, it appears that the amplitude of $\Delta h$ grows without bounds albeit slowly. The author has not been able to determine whether this is due to an implementation detail (e.g. an inconsistent discretisation of bathymetry and initial conditions) or an inherent problem of the method.
+As mentioned in the previous chapter, one can also look at the balance between bathymetry and Coriolis terms by choosing the same (Gaussian) profile for bathymetry and water surface. In this case, the unbalanced, LeVeque and Rogers solver for geostrophic equilibria preserve the balance. In the case of the unbalanced solver this is due to both terms being computed in the same step and cancelling to machine precision. For the other two solvers it is simply a consequence of being able to maintain the balance of any geostrophic equilibrium. The Rogers solver for still water systems on the other hand does not preserve this equilibrium as can be seen in Figs.~\ref{fig:results-geo-gauss}. This is not surprising, since only one of the source terms is non-zero which is balanced by the flux term --- i.e. this is the exact same problem observed for the unbalanced solver earlier. However, it appears that in this case the amplitude of $\Delta h$ grows without bounds albeit slowly. The author has not been able to determine whether this is due to an implementation detail (e.g. an inconsistent discretisation of bathymetry and initial conditions) or an inherent problem of the method.
 
 \section{Wave through Geostrophic Equilibrium}
 
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-1}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-1}
     \caption{$t = 0.1$}
     \label{fig:results-geo-wave-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-2}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-2}
     \caption{$t = 0.2$}
     \label{fig:results-geo-wave-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-5}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-5}
     \caption{$t = 0.5$}
     \label{fig:results-geo-wave-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-10}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-10}
     \caption{$t = 1.0$}
     \label{fig:results-geo-wave-10}
   \end{subfigure}
@@ -193,22 +198,22 @@ As mentioned in the previous chapter, one can also look at the balance between b
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-1}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-1}
     \caption{$t = 0.1$}
     \label{fig:results-geo-wave-rog-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-2}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-2}
     \caption{$t = 0.2$}
     \label{fig:results-geo-wave-rog-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-5}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-5}
     \caption{$t = 0.5$}
     \label{fig:results-geo-wave-rog-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-10}
+    \includegraphics[width=\textwidth]{diagrams/results-geo-wave-rog-10}
     \caption{$t = 1.0$}
     \label{fig:results-geo-wave-rog-10}
   \end{subfigure}
@@ -225,26 +230,26 @@ It can be seen that the solvers which can preserve the geostrophic equilibrium i
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-flow-1}
+    \includegraphics[width=\textwidth]{diagrams/results-flow-1}
     \caption{$t = 0.1$}
     \label{fig:results-flow-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-flow-2}
+    \includegraphics[width=\textwidth]{diagrams/results-flow-2}
     \caption{$t = 0.2$}
     \label{fig:results-flow-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-flow-5}
+    \includegraphics[width=\textwidth]{diagrams/results-flow-5}
     \caption{$t = 0.5$}
     \label{fig:results-flow-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    %\includegraphics[width=\textwidth]{diagrams/results-flow-10}
+    \includegraphics[width=\textwidth]{diagrams/results-flow-10}
     \caption{$t = 1.0$}
     \label{fig:results-flow-10}
   \end{subfigure}
-  \caption{Results for transcritical flow over a cosine ridge. The reference solution has been computed with the unbalanced solver on 10000 grid cells and is shown as a solid blue line. The orange line represents the bathymetry. The green data was obtained with the LeVeque solver over 100 grid cells. The columns correspond to the deviations of the conserved variables $h$, $hu$ and $hv$ and the rows to different time levels. $K = 10$.}
+  \caption{Results for transcritical flow over a cosine ridge. The reference solution has been computed with the unbalanced solver on 10000 grid cells and is shown as a solid blue line. The orange line represents the bathymetry. The green data was obtained with the LeVeque solver over 100 grid cells. The columns correspond to the deviations of the conserved variables $h$, $hu$ and $hv$ and the rows to different time levels. $K = 10$. $U = 1.01$.}
   \label{fig:results-flow}
 \end{figure}
 
@@ -252,7 +257,7 @@ When the system starts with uniform velocity in subcritical or supercritical flo
 
 However, the interesting case is transcritical flow. While the unbalanced and Rogers solvers can handle these cases as well as any uniform flow, the LeVeque solver fails to compute them correctly. This has already been observed in \citet{leveque1998balancing}. LeVeque found that the Newton method diverges when the shock forms over the bathymetry and suggested using an unbalanced method until an almost steady state is reached, and then switching to the balanced method.
 
-The author has observed the same divergences but has not attempted switching methods. Instead, the Newton method was replaced by an explicit formula to solve the cubic equation (see \citet{press2007numerical}, pp. 178--179). While this stops the solution from breaking down, and the result roughly resembles the true solution, it contains too many shocks, as shown in Figs.~\ref{fig:results-flow}. Presumably, this is due to choosing the wrong root when all three roots are real. For some parameters and grid sizes these unphysical shocks can also grow large enough to violate the assumption that $h > 0$, in which case the solution also breaks down (as the solver has not been developed to support dry states).
+The author has observed the same divergences but has not attempted switching methods. Instead, the explicit formula mentioned in Section~\ref{sec:cubic} was used to solve the cubic equation. While this stops the solution from breaking down, and the result roughly resembles the true solution, it contains too many shocks, as shown in Figs.~\ref{fig:results-flow}. Presumably, this is due to choosing the wrong root when all three roots are real. For some parameters and grid sizes these unphysical shocks can also grow large enough to violate the assumption that $h > 0$, in which case the solution also breaks down (as the solver has not been developed to support dry states).
 
 \section{Execution Time}
 

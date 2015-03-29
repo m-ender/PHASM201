@@ -180,9 +180,11 @@ Independently of the bathymetry profile, one of five initial conditions can be c
 \end{figure}
 
 \section{Notes on LeVeque Solver}
+\label{sec:cubic}
 
-As mentioned in Section~\ref{sec:leveque}, a cubic needs to be solved to determine the size of the new Riemann problem at the cell centres. Two different approaches have been implement which can be chosen via a flag in the Fortran code:
+As mentioned in Section~\ref{sec:leveque}, a cubic equation needs to be solved to determine the size of the new Riemann problem at the cell centres. Two different approaches have been implemented which can be chosen via a flag in the Fortran code:
 
 \begin{itemize}
-  \item As
+  \item As implemented by LeVeque, the Newton--Raphson method can be used to improve an initial guess. If the solution does not converge within five iterations, the attempt is aborted and a warning is printed.
+  \item Alternatively, the roots can be found using an explicit formula (see \citet{press2007numerical}, pp. 178--179). However, when the discriminant is greater than $0$, this yields three real roots and one of them has to be chosen. In this case, the author's implementation chooses the root with the smallest absolute value in order to disturb the conserved variables as little as possible (and ensure that the positivity of $h$ is preserved if possible).
 \end{itemize}

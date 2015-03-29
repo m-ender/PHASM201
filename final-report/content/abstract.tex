@@ -1,4 +1,6 @@
 %!TEX root = ../final-report.tex
 \begin{abstract}
-  abstract...
+
+Atmospheric and oceanic flows are often modelled using the Shallow Water Equations (SWEs) with the addition of source terms to account for varying topography and the rotation of the Earth. Naive numerical methods fail to preserve steady states in which these additional effects are large but exactly cancelled by pressure gradients in the system. This is a significant shortcomings, as large-scale real-world flows usually very close to such a balance at all times. This report investigates two existing methods to obtain so-called \emph{well-balanced} solvers. The author was not able to use one of the methods, but was able to derive an alternative formulation which does work. New solvers for the SWEs under rotation have been developed based on these methods and implemented with the software package \emph{Clawpack}. The new solvers were shown to be able to preserve these steady states at least to machine precision.
+
 \end{abstract}
