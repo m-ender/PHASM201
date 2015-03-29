@@ -68,12 +68,12 @@ subroutine rp1(maxmx,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,wave,s,amdq,apdq)
     hvr = auxr(2,:) + qr(3,:)
     hvl = auxl(2,:) + ql(3,:)
 
-    write(6,*) '    auxr =', auxr(1,:)
-    write(6,*) '    auxr =', auxr(2,:)
-    write(6,*) '    qr =', qr(1,:)
-    write(6,*) '    hr =', hr
-    write(6,*) '    qr =', qr(3,:)
-    write(6,*) '    hvr =', hvr
+    !write(6,*) '    auxr =', auxr(1,:)
+    !write(6,*) '    auxr =', auxr(2,:)
+    !write(6,*) '    qr =', qr(1,:)
+    !write(6,*) '    hr =', hr
+    !write(6,*) '    qr =', qr(3,:)
+    !write(6,*) '    hvr =', hvr
 
 !     # Main loop of the Riemann solver.
     do 30 i=2-mbc,mx+mbc

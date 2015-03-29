@@ -233,15 +233,17 @@ def step_source(solver,state,dt):
 
     X = state.c_centers
 
+    dx = state.delta[0]
+
     v_balance = U * K
 
-    qstar[1,:] = q[1,:] + dt2 * (hv * K - h * Bx)
+    qstar[1,:] = q[1,:] + dt2 * (hv * K - h * DB / dx)
     qstar[2,:] = q[2,:] - dt2 * (hu * K - h * v_balance)
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
-    q[1,:] = q[1,:] + dt * (hv * K - h * Bx)
+    q[1,:] = q[1,:] + dt * (hv * K - h * DB / dx)
     q[2,:] = q[2,:] - dt * (hu * K - h * v_balance)
 
 def step_source_rogers(solver,state,dt):
@@ -274,16 +276,18 @@ def step_source_rogers(solver,state,dt):
 
     X = state.c_centers
 
+    dx = state.delta[0]
+
     v_balance = U * K
 
-    qstar[1,:] = q[1,:] + dt2 * (hv * K - u * u * Bx)
-    qstar[2,:] = q[2,:] - dt2 * (hu * K + u * v * Bx - h * v_balance)
+    qstar[1,:] = q[1,:] + dt2 * (hv * K - u * u * DB / dx)
+    qstar[2,:] = q[2,:] - dt2 * (hu * K + u * v * DB / dx - h * v_balance)
 
     hu   = qstar[1,:]
     hv   = qstar[2,:]
 
-    q[1,:] = q[1,:] + dt * (hv * K - u * u * Bx)
-    q[2,:] = q[2,:] - dt * (hu * K + u * v * Bx - h * v_balance)
+    q[1,:] = q[1,:] + dt * (hv * K - u * u * DB / dx)
+    q[2,:] = q[2,:] - dt * (hu * K + u * v * DB / dx - h * v_balance)
 
 def step_source_rogers_geo(solver,state,dt):
     """
@@ -610,43 +614,43 @@ def setplot(plotdata):
     # plotitem.color = 'b'
     # plotitem.kwargs = {'linewidth':3}
 
-    # # Figure for momentum components
-    # plotfigure = plotdata.new_plotfigure(name='Momentum', figno=2)
+    # Figure for momentum components
+    plotfigure = plotdata.new_plotfigure(name='Momentum', figno=2)
 
-    # # Set up for axes in this figure:
-    # plotaxes = plotfigure.new_plotaxes()
-    # plotaxes.axescmd = 'subplot(211)'
-    # plotaxes.xlimits = [-0.5,0.5]
-    # plotaxes.title = 'x-Momentum'
+    # Set up for axes in this figure:
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.axescmd = 'subplot(211)'
+    plotaxes.xlimits = [-0.5,0.5]
+    plotaxes.title = 'x-Momentum'
 
-    # # Set up for item on these axes:
-    # plotitem = plotaxes.new_plotitem(plot_type='1d')
-    # plotitem.plot_var = 1
-    # plotitem.plotstyle = '-'
-    # plotitem.color = 'b'
-    # plotitem.kwargs = {'linewidth':3}
+    # Set up for item on these axes:
+    plotitem = plotaxes.new_plotitem(plot_type='1d')
+    plotitem.plot_var = 1
+    plotitem.plotstyle = '-'
+    plotitem.color = 'b'
+    plotitem.kwargs = {'linewidth':3}
 
-    # # Set up for axes in this figure:
-    # plotaxes = plotfigure.new_plotaxes()
-    # plotaxes.axescmd = 'subplot(212)'
-    # plotaxes.xlimits = [-0.5,0.5]
-    # plotaxes.title = 'y-Momentum'
+    # Set up for axes in this figure:
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.axescmd = 'subplot(212)'
+    plotaxes.xlimits = [-0.5,0.5]
+    plotaxes.title = 'y-Momentum'
 
-    # # Set up for item on these axes:
-    # plotitem = plotaxes.new_plotitem(plot_type='1d')
+    # Set up for item on these axes:
+    plotitem = plotaxes.new_plotitem(plot_type='1d')
 
-    # def y_momentum(current_data):
-    #     if Solver == 'ROGERS_GEO':
-    #         hv = current_data.q[2,:] + hv0
-    #     else:
-    #         hv = current_data.q[2,:]
+    def y_momentum(current_data):
+        if Solver == 'ROGERS_GEO':
+            hv = current_data.q[2,:] + hv0
+        else:
+            hv = current_data.q[2,:]
 
-    #     return hv
+        return hv
 
-    # plotitem.plot_var = y_momentum
-    # plotitem.plotstyle = '-'
-    # plotitem.color = 'b'
-    # plotitem.kwargs = {'linewidth':3}
+    plotitem.plot_var = y_momentum
+    plotitem.plotstyle = '-'
+    plotitem.color = 'b'
+    plotitem.kwargs = {'linewidth':3}
 
     return plotdata
 
