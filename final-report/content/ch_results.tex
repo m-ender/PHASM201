@@ -4,6 +4,8 @@
 
 This chapter presents results for the four solvers. For each of the five initial conditions, the solvers will be compared for a few representative bathymetries. Reference results were obtained using the unbalanced solver from Section~\ref{sec:roe} on a very fine grid of 10,000 cells. At the end, the execution time of the different solvers is compared as well.
 
+Apart from the case of uniform flow, the explicit formula has been used for the cubic that appears in the LeVeque solver.
+
 \section{Still Water}
 
 \begin{figure}
@@ -223,22 +225,22 @@ It can be seen that the solvers which can preserve the geostrophic equilibrium i
 \begin{figure}
   \centering
   \begin{subfigure}{\textwidth}
-    \includegraphics[width=\textwidth]{diagrams/results-flow-1}
+    %\includegraphics[width=\textwidth]{diagrams/results-flow-1}
     \caption{$t = 0.1$}
     \label{fig:results-flow-1}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    \includegraphics[width=\textwidth]{diagrams/results-flow-2}
+    %\includegraphics[width=\textwidth]{diagrams/results-flow-2}
     \caption{$t = 0.2$}
     \label{fig:results-flow-2}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    \includegraphics[width=\textwidth]{diagrams/results-flow-5}
+    %\includegraphics[width=\textwidth]{diagrams/results-flow-5}
     \caption{$t = 0.5$}
     \label{fig:results-flow-5}
   \end{subfigure} \\
   \begin{subfigure}{\textwidth}
-    \includegraphics[width=\textwidth]{diagrams/results-flow-10}
+    %\includegraphics[width=\textwidth]{diagrams/results-flow-10}
     \caption{$t = 1.0$}
     \label{fig:results-flow-10}
   \end{subfigure}
@@ -254,7 +256,32 @@ The author has observed the same divergences but has not attempted switching met
 
 \section{Execution Time}
 
+\begin{table}
+  \centering
+  \begin{tabular}{lr}
+    Method & Time \\
+    \hline
+    Unbalanced & 11\,s \\
+    LeVeque (explicit) & 16\,s\\
+    LeVeque (Newton) & 11\,s\\
+    Rogers (still water) & 12\,s\\
+    Rogers (geostrophic equilibrium) & 12\,s
+  \end{tabular}
+  \caption{Timing results for each method. Minimum of five runs. System: wave through geostrophic equilibrium over bathymetry. $N = 5000$. $K = 10$. $t_{\mathrm{max}} = 1$.}
+  \label{tab:timing}
+\end{table}
+
+First, it should be noted that all algorithms have a time complexity of $O(N^2)$: for each time step, a fixed amount of computation has to be performed per grid cell, and due to the CFL condition, the time steps scale with the grid resolution. Hence, the time taken by each method is determined by that fixed amount of computation, and one can expect that the methods' timings will only differ by a constant scale factor.
+
+Clawpack prints some diagnostic data when run, including exact time stamps of when the computation started and finished. This was used to get a rough idea of how efficient the different methods are. As a test the wave through a geostrophic equilibrium over a cosine ridge was chosen, using $N = 5000$ and $K = 10$, up to $t = 1$. Each method was timed solving this system five times, and the minimum time was recorded. For the purposes of these tests, the two versions of LeVeques method were tested separately. The version which uses Newton's method was limited to five iterations. The results are shown in Tab.~\ref{tab:timing}.
+
+These results should be taken with a grain of salt and are only intended to give a very rough idea of the scale factors mentioned above. The timings were actually obtained to millisecond accuracy, but only reported to full seconds due to the fluctuations in the results (the tests have been run in a virtual machine). However, none of the implementations have been optimised for speed, so getting more accurate results in a more reliable environment would not yield very useful data at this stage.
+
+Nevertheless, these results indicate a few features of the different solvers:
+
 \begin{itemize}
-  \item show how unbalanced method fails
-  \item go through different methods, showing where they work and where they fail
+  \item The LeVeque solver using the explicit formula is the slowest. This difference could certainly improved by optimising the implementation of the cubic solver. But at the same time, a more sophisticated algorithm in choosing the correct root might improve this method, which would slow this down even further. Regardless, a factor of approximately $1.5$ does certainly not seem prohibitive in using this method.
+  \item The use of Newton's method does not seem to have any noticeable impact on runtime compared to the unbalanced solver. Presumably, this is mostly due to the method converging within very few iterations. Not having to alternate with a source term solver (which was written in Python) might also make up for the additional time used to choose the new Riemann problems.
+  \item While the Rogers solvers were consistently a little slower than the unbalanced solver, the author attributes this to a naive implementation or fluctuations in the test results. In principle, their computation can be identical to the unbalanced solver but is simply performed on different variables.
+  \item The complexity of the equilibrium chosen for a Rogers solver does not (significantly) affect its efficiency.
 \end{itemize}
