@@ -25,7 +25,9 @@ The code for these was based on a one-dimensional SWE solver provided with Clawp
 
 \section{Test Harness}
 
-In order to evaluate these solvers, the author wrote a test framework based on Pyclaw. The framework is set up via a single configuration file, which contains nine parameters:
+In order to evaluate these solvers, the author wrote a test framework based on Pyclaw. The full source code can be found in a \emph{git}\footnote{\url{http://git-scm.com/}} repository at \url{https://github.com/mbuettner/balanced-swe-solvers}.
+
+The framework is set up via a single configuration file, which contains nine parameters:
 
 \begin{itemize}
   \item Solver to be tested
@@ -63,7 +65,7 @@ The following seven bathymetry profiles are supported:
   \item Flat: $B = 0$ everywhere.
   \item Sloped: $B = 0.4 + 0.8x$. See Fig.~\ref{fig:bath-slope}.
   \item Gaussian ridge: $B = \frac{1}{2} \exp (-128 x^2)$. See Fig.~\ref{fig:bath-gaussian}.
-  \item Cosine ridge: $B = \frac{1}{2} \cos(4\pi x)^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-cosine}. This is the bathymetry used in \citet{leveque1998balancing}.
+  \item Cosine ridge: $B = \frac{1}{2} \cos(4\pi x)^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-cosine}. This is the bathymetry used in \cite{leveque1998balancing}.
   \item Parabolic ridge: $B = \frac{1}{2} - 32x^2$, for $|x| < \frac{1}{8}$, $B = 0$, otherwise. See Fig.~\ref{fig:bath-para-ridge}.
   \item Parabolic bowl: $B = 2 x^2$. See Fig.~\ref{fig:bath-para-bowl}.
   \item Cliff: $B = \frac{1}{4} (1 + \tanh (100 x))$. See Fig.~\ref{fig:bath-cliff}.
@@ -109,7 +111,7 @@ These profiles are discretised by evaluating them on the cell edges and then ave
 
 The three ridge profiles may seem very similar qualitatively, but have been included for different reasons. The cosine ridge and parabolic ridge have compact support, which means that the regions of the domain affected by the bathymetry can be clearly distinguished from those which are not. Likewise, when waves travel across the ridge, it is clear at which time step the wave is first affected by the ridge. The difference between them is that the cosine ridge has a continuous derivative, while the parabola is not differentiable at $|x| = \frac{1}{8}$.
 
-The Gaussian ridge does not have compact support but is still valuable, because this profile exactly matches the surface profile of the geostrophic equilibrium chosen (see below). By using the same profile for both water surface and bathymetry, the flux terms vanish completely (since $h$ becomes a constant), and the two source terms balance each other. This balance does not seem be addressed usually, presumably because a naive unbalanced method with source split will still be well-balanced with respect to the source terms themselves (as they are computed in the same step). However, it is worth verifying whether this balance is still preserved for methods which modify how source terms are treated.
+The Gaussian ridge does not have compact support but is still valuable, because this profile exactly matches the surface profile of the geostrophic equilibrium chosen (see below). By using the same profile for both water surface and bathymetry, the flux terms vanish completely (since $h$ becomes a constant), and the two source terms balance each other. This balance does not seem be addressed usually, presumably because a na\"ive unbalanced method with source split will still be well-balanced with respect to the source terms themselves (as they are computed in the same step). However, it is worth verifying whether this balance is still preserved for methods which modify how source terms are treated.
 
 Bathymetries with non-zero slope at the domain boundaries (i.e. sloped bathymetry and the parabolic bowl) were are a good test for the chosen boundary conditions.
 
@@ -120,7 +122,7 @@ Independently of the bathymetry profile, one of five initial conditions can be c
   \item Wave through still water. This system is mostly identical to the still water case, apart from a small perturbation near one edge of the domain, such that $h_s = 1.05$ for $|x + 0.35| < 0.05$, and $h_s = 1$ otherwise. The basic behaviour is that the perturbation separates into two waves, one of which leaves the domain to the left and one of which traverses the domain and, in particular, the bathymetry where it may be partially reflected. The exact dynamics (especially in the presence of the Coriolis term) are more complicated, but this system allows a single wave to be studied in isolation. As an example, Fig.~\ref{fig:init_wave} shows the system for the cosine ridge.
   \item Geostrophic equilibrium. The surface level is fixed at $h_s = 1 + \frac{1}{2} \exp (-128 x^2)$, such that $h$ is chosen as $h_s - B$. Furthermore, $hu = 0$ and $hv$ is determined by Eq.~\ref{eq:geo_eq}. This system requires $K \neq 0$. Figs.~\ref{fig:init_geo} show this initial condition for the flat and cliff bathymetries and several values of $K$. Note that $hv$ depends both on the bathymetry and on $K$.
   \item Wave through geostrophic equilibrium. This is essentially a linear combination of the previous two systems. First, the geostrophic equilibrium is determined, and then a height perturbation of magnitude $0.05$ is added to the interval $x \in [-0.4, -0.3]$. $hv$ is unchanged from the geostrophic equilibrium. Fig.~\ref{fig:init_geo_wave} shows the initial water level for the parabolic bowl bathymetry.
-  \item Uniform flow. Defined by $h_s = 1$, $u = U$, $v = 0$, where $U$ can be freely chosen. Unless the bathymetry is flat, this is not a steady state, but will settle into a steady system for many parameter combinations. $U$ can be used to choose between subcritical, transcritical and supercritical flows, as shown in \citet{esler2005steady}. Figs.~\ref{fig:init_flow} show initial momentum for two different bathymetries --- the initial water level is indistinguishable from the still water case, and $hv$ = 0 everywhere. Note that the momentum is not uniform, because $h$ varies.
+  \item Uniform flow. Defined by $h_s = 1$, $u = U$, $v = 0$, where $U$ can be freely chosen. Unless the bathymetry is flat, this is not a steady state, but will settle into a steady system for many parameter combinations. $U$ can be used to choose between subcritical, transcritical and supercritical flows, as shown in \cite{esler2005steady}. Figs.~\ref{fig:init_flow} show initial momentum for two different bathymetries --- the initial water level is indistinguishable from the still water case, and $hv$ = 0 everywhere. Note that the momentum is not uniform, because $h$ varies.
 \end{itemize}
 
 \begin{figure}
@@ -186,5 +188,5 @@ As mentioned in Section~\ref{sec:leveque}, a cubic equation needs to be solved t
 
 \begin{itemize}
   \item As implemented by LeVeque, the Newton--Raphson method can be used to improve an initial guess. If the solution does not converge within five iterations, the attempt is aborted and a warning is printed.
-  \item Alternatively, the roots can be found using an explicit formula (see \citet{press2007numerical}, pp. 178--179). However, when the discriminant is greater than $0$, this yields three real roots and one of them has to be chosen. In this case, the author's implementation chooses the root with the smallest absolute value in order to disturb the conserved variables as little as possible (and ensure that the positivity of $h$ is preserved if possible).
+  \item Alternatively, the roots can be found using an explicit formula (see \cite{press2007numerical}, pp. 178--179). However, when the discriminant is greater than $0$, this yields three real roots and one of them has to be chosen. In this case, the author's implementation chooses the root with the smallest absolute value in order to disturb the conserved variables as little as possible (and ensure that the positivity of $h$ is preserved if possible).
 \end{itemize}

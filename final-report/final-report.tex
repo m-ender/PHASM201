@@ -9,6 +9,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{pdfpages}
 
 \usepackage{listings}
 
@@ -16,10 +17,18 @@
   basicstyle=\footnotesize\ttfamily %
 }
 
+\usepackage{afterpage}
+
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
+
 \usepackage[utf8]{inputenc}
 \usepackage[hyphens]{url}
 
-\usepackage{natbib}
+\usepackage[numbers,sort]{natbib}
 \usepackage{textcomp}
 \usepackage[greek,english]{babel}
 \usepackage{amsmath}
@@ -54,9 +63,14 @@
 \begin{document}
 
 \maketitle
-
+\blankpage
+\newgeometry{left=0cm,top=0cm,bottom=0cm,right=0cm}
+\includepdf{submission_form}
+\restoregeometry
+\blankpage
 \include{content/abstract}
-
+\blankpage
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 \include{content/ch_introduction}
@@ -71,7 +85,7 @@
 
 
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{plainnat}
+\bibliographystyle{unsrtnat}
 \bibliography{../common/bibliography}
 
 \end{document}

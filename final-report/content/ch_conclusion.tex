@@ -2,7 +2,7 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-For the purpose of accurately modelling rotating flows in or near geostrophic balance, two approaches have been investigated, based on \citet{leveque1998balancing} and \citet{rogers2003mathematical}. After presenting an alternative form of Rogers's method (see Appendix~\ref{ap:rogers}), new solvers have been derived based on these approaches and have been shown to be indeed well-balanced for geostrophic equilibria.
+For the purpose of accurately modelling rotating flows in or near geostrophic balance, two approaches have been investigated, based on \cite{leveque1998balancing} and \cite{rogers2003mathematical}. After presenting an alternative form of Rogers's method (see Appendix~\ref{ap:rogers}), new solvers have been derived based on these approaches and have been shown to be indeed well-balanced for geostrophic equilibria.
 
 This chapter draws some conclusions about the advantages and disadvantages of each method and presents several avenues which could be pursued for future research.
 
@@ -26,11 +26,11 @@ These solvers seem particularly well suited to initial conditions which are smal
 
 The field of computational geophysical fluid dynamics in general, and the research of balanced methods in particular is very vast, and only a few very specific methods and problems could be investigated within the scope of this project. Hence, there are several interesting ways in which this work could be continued and extended.
 
-Regarding the LeVeque solver, more effort could be put into solving the cubic equation. Depending on the context of the problem it might be possible to determine the physically correct root by making use of entropy conditions or similar. This would allow the LeVeque solver to be used for arbitrary systems, even if they contain transcritical regions.
+Regarding the LeVeque solver, more effort could be put into solving the cubic equation. Depending on the context of the problem it might be possible to determine the physically correct root, e.g. by making use of entropy conditions. This would allow the LeVeque solver to be used for arbitrary systems, even if they contain transcritical regions.
 
-For Rogers's method, it is still unclear why the author's solvers differ from the theory presented in \citet{rogers2003mathematical}, yet both the author and Rogers et al. were able to obtain good results with their methods. This should be further investigated to reconcile the discrepancies in the two derivations. Additionally, the apparently unbounded growth of the still water solver for geostrophic equilibrium found in Section~\ref{sec:results-geo} should be analysed to determine whether this is a problem of the method or its implementation.
+For Rogers's method, it is still unclear why the author's solvers differ from the theory presented in \cite{rogers2003mathematical}, yet both the author and Rogers et al. were able to obtain good results with their methods. This should be further investigated to reconcile the discrepancies in the two derivations. Additionally, the apparently unbounded growth of the still water solver for geostrophic equilibrium found in Section~\ref{sec:results-geo} should be analysed to determine whether this is a problem of the method or its implementation.
 
-Once the theory behind this method is clarified, an even more general solver could be easily derived which could be well-balanced for equilibria with $hu \neq 0$, like the steady flows investigated in \citet{esler2005steady}.
+Once the theory behind this method is clarified, an even more general solver could be easily derived which could be well-balanced for equilibria with $hu \neq 0$, like the steady flows investigated in \cite{esler2005steady}.
 
 Of course, many more approaches for obtaining well-balanced solvers have been developed in the past, and some of these might be more suitable for balancing the Coriolis terms than the methods chosen in this project. Furthermore, one might investigate other numerical schemes which are not based on Riemann solvers, as \citet{chertockwell} have done in a recent paper.
 
