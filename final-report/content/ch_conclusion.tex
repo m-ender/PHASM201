@@ -24,9 +24,9 @@ These solvers seem particularly well suited to initial conditions which are smal
 
 \section{Future Work}
 
-The field of computational geophysical fluid dynamics in general, and the research of balanced methods in particular is very vast, and only a few very specific methods and problems could be investigated within the scope of this project. Hence, there are several interesting ways in which this work could be continued and extended.
+The field of computational geophysical fluid dynamics in general, and the research of balanced methods in particular is vast, and only a few very specific methods and problems could be investigated within the scope of this project. Hence, there are several interesting ways in which this work could be continued and extended.
 
-Regarding the LeVeque solver, more effort could be put into solving the cubic equation. Depending on the context of the problem it might be possible to determine the physically correct root, e.g. by making use of entropy conditions. This would allow the LeVeque solver to be used for arbitrary systems, even if they contain transcritical regions.
+Regarding the LeVeque solver, more effort could be put into solving the cubic equation: depending on the context of the problem it might be possible to determine the physically correct root, e.g. by making use of entropy conditions. This would allow the LeVeque solver to be used for arbitrary systems, even if they contain transcritical regions.
 
 For Rogers's method, it is still unclear why the author's solvers differ from the theory presented in \cite{rogers2003mathematical}, yet both the author and Rogers et al. were able to obtain good results with their methods. This should be further investigated to reconcile the discrepancies in the two derivations. Additionally, the apparently unbounded growth of the still water solver for geostrophic equilibrium found in Section~\ref{sec:results-geo} should be analysed to determine whether this is a problem of the method or its implementation.
 

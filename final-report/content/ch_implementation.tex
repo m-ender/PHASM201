@@ -8,9 +8,9 @@ This chapter outlines how the methods derived in the previous section were imple
 
 The methods presented in the previous chapter have been implemented using the software package \emph{Clawpack}\footnote{\url{http://www.clawpack.org/}} (\textbf{C}onservation \textbf{law} \textbf{pack}age), version 5.2.2, or more specifically its \emph{Pyclaw} package. Clawpack was originally written by Randall J. LeVeque and is now maintained and further developed by a small group of researchers (including LeVeque).
 
-The basic principle of Clawpack is that the user writes Riemann solver, which receives the grid of cell averages along with optional auxiliary data and calculates the fluctuations (Eqs.~\ref{eq:fluctuations}) for each cell. The package then uses this to implement Godunov's method in wave propagation form, Eq.~\ref{eq:wpf}. The parameters of the solver, like the grid size, boundary conditions, gravity or the strength of the Coriolis force, as well as the initial conditions and auxiliary data like bathymetry can specified separately. Clawpack also provides the option to specify a separate function to be solved after each time step which can be used to implement source terms via source splitting.
+The basic principle of Clawpack is that the user writes a Riemann solver, which receives the grid of cell averages along with optional auxiliary data and calculates the fluctuations (Eqs.~\ref{eq:fluctuations}) for each cell. The package then uses this to implement Godunov's method in wave propagation form, Eq.~\ref{eq:wpf}. The parameters of the solver, like the grid size, boundary conditions, gravity or the strength of the Coriolis force, as well as the initial conditions and auxiliary data like bathymetry can specified separately. Clawpack also provides the option to specify a separate function to be solved after each time step which can be used to implement source terms via source splitting.
 
-Traditionally, solvers were written in Fortran (originally in FORTRAN 77, as of Clawpack 5 in Fortran 90) and the system was configured through data files. The more recent Pyclaw package provides Python wrappers around the core framework (which is itself written in Fortran). Pyclaw now allows the system to be configured programmatically using Python, version 2.7. When using Pyclaw, solvers can be written either in Fortran or in Python. However, it is advisable to use Fortran-solvers, which are in general significantly faster. The solver's code usually dominates the computation, so this an important concern when simulating fine grids, long time scales or multiple dimensions.
+Traditionally, solvers were written in Fortran (FORTRAN 77 originally, Fortran 90 as of Clawpack 5) and the system was configured through data files. The more recent Pyclaw package provides Python wrappers around the core framework (which is itself written in Fortran). Pyclaw now allows the system to be configured programmatically using Python, version 2.7. When using Pyclaw, solvers can be written either in Fortran or in Python. However, it is advisable to use Fortran-solvers, which are in general significantly faster. The solver's code usually dominates the computation, so this an important concern when simulating fine grids, long time scales or multiple dimensions.
 
 For this project, four solvers were implemented in Fortran:
 
@@ -40,20 +40,6 @@ The framework is set up via a single configuration file, which contains nine par
   \item $K$, the Coriolis parameter
   \item $U$, the background flow velocity (only used if the initial condition is uniform flow)
 \end{itemize}
-
-An example configuration might look as follows
-
-\begin{lstlisting}[caption=Configuration file]
-  UNBALANCED
-  STILL_LAKE
-  COSINE
-  500
-  0
-  1
-  10
-  10
-  2.0
-\end{lstlisting}
 
 Due to the use of dimensionless equations, the domain can be fixed to $x \in [-0.5, 0.5]$, the bathymetry will always be in $B(x) \in [0,1)$ and the initial conditions are scaled such that background surface level at the boundaries is $h_s = 1$. All systems use outflow boundary conditions to focus entirely on the dynamics due to the initial conditions.
 
@@ -118,7 +104,7 @@ Bathymetries with non-zero slope at the domain boundaries (i.e. sloped bathymetr
 Independently of the bathymetry profile, one of five initial conditions can be chosen. The framework takes into account the chosen bathymetry when calculating the initial values of $\vb q$. The supported initial conditions are the following:
 
 \begin{itemize}
-  \item Still water. Defined by $h_s = 1$, $u = v = 0$. Hence, the conserved variables are chosen to be $h = 1 - B$, $hu = hv = 0$. This is what is shown in Figs.~\ref{fig:bathymetries}.
+  \item Still water. Defined by $h_s = 1$, $u = v = 0$. Hence, the conserved variables are chosen to be $h = 1 - B$, $hu = hv = 0$. This is shown in Figs.~\ref{fig:bathymetries}.
   \item Wave through still water. This system is mostly identical to the still water case, apart from a small perturbation near one edge of the domain, such that $h_s = 1.05$ for $|x + 0.35| < 0.05$, and $h_s = 1$ otherwise. The basic behaviour is that the perturbation separates into two waves, one of which leaves the domain to the left and one of which traverses the domain and, in particular, the bathymetry where it may be partially reflected. The exact dynamics (especially in the presence of the Coriolis term) are more complicated, but this system allows a single wave to be studied in isolation. As an example, Fig.~\ref{fig:init_wave} shows the system for the cosine ridge.
   \item Geostrophic equilibrium. The surface level is fixed at $h_s = 1 + \frac{1}{2} \exp (-128 x^2)$, such that $h$ is chosen as $h_s - B$. Furthermore, $hu = 0$ and $hv$ is determined by Eq.~\ref{eq:geo_eq}. This system requires $K \neq 0$. Figs.~\ref{fig:init_geo} show this initial condition for the flat and cliff bathymetries and several values of $K$. Note that $hv$ depends both on the bathymetry and on $K$.
   \item Wave through geostrophic equilibrium. This is essentially a linear combination of the previous two systems. First, the geostrophic equilibrium is determined, and then a height perturbation of magnitude $0.05$ is added to the interval $x \in [-0.4, -0.3]$. $hv$ is unchanged from the geostrophic equilibrium. Fig.~\ref{fig:init_geo_wave} shows the initial water level for the parabolic bowl bathymetry.
